@@ -36,7 +36,7 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
           accessibilityRole="button"
           style={({ pressed }) => [styles.creditsBadge, pressed && styles.buttonPressed]}
         >
-          <Sparkles size={20} color={agentTheme.colors.text} strokeWidth={1.85} />
+          <Sparkles size={17} color={agentTheme.colors.text} strokeWidth={1.85} />
           <Text allowFontScaling={false} style={styles.creditsText}>
             {points}
           </Text>
@@ -96,32 +96,32 @@ const styles = StyleSheet.create({
     fontFamily: serifFont,
   },
   rightSlot: {
-    width: 112,
+    width: 96,
     height: 62,
     alignItems: 'flex-end',
     justifyContent: 'center',
     zIndex: 3,
   },
   creditsBadge: {
-    minWidth: 94,
-    height: 42,
-    paddingLeft: 16,
-    paddingRight: 16,
+    minWidth: 78,
+    height: 36,
+    paddingLeft: 12,
+    paddingRight: 12,
     borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
+    gap: 7,
     backgroundColor: 'rgba(255,255,255,0.62)',
     borderWidth: 1,
     borderColor: 'rgba(17,24,39,0.065)',
   },
   creditsText: {
     color: agentTheme.colors.text,
-    fontSize: 22,
-    lineHeight: 27,
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: '800',
-    letterSpacing: -0.32,
+    letterSpacing: -0.24,
   },
   buttonPressed: {
     opacity: 0.58,

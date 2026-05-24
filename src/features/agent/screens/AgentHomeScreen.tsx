@@ -19,7 +19,7 @@ import { agentTheme } from '../constants/agentTheme';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
-const MESSAGE_LIST_BOTTOM_GAP = 18;
+const MESSAGE_LIST_BOTTOM_GAP = -22;
 const MESSAGE_LIST_TOP_INSET = 28;
 const TEMPORARY_RESPONSE_DELAY_MS = 900;
 
@@ -36,7 +36,7 @@ export function AgentHomeScreen() {
 
   const hasMessages = messages.length > 0 || isThinking;
   const messageListBottomInset = useMemo(
-    () => composerHeight + CLOSED_COMPOSER_BOTTOM + MESSAGE_LIST_BOTTOM_GAP,
+    () => Math.max(76, composerHeight + CLOSED_COMPOSER_BOTTOM + MESSAGE_LIST_BOTTOM_GAP),
     [composerHeight],
   );
 
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 18,
-    paddingBottom: 220,
+    paddingBottom: 118,
     zIndex: 0,
   },
   startContent: {

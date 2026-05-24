@@ -1,10 +1,7 @@
 import {
   BookOpen,
-  CalendarDays,
   ChevronDown,
-  CircleHelp,
   CirclePlus,
-  Folder,
   PencilLine,
   Search,
   Settings,
@@ -19,7 +16,7 @@ import { agentTheme } from '../constants/agentTheme';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const ICON_COLOR = agentTheme.colors.text;
-const SECTION_COLOR = '#8d8da1';
+const SECTION_COLOR = agentTheme.colors.mutedText;
 
 type MenuIcon = ComponentType<{
   color?: string;
@@ -30,7 +27,6 @@ type MenuIcon = ComponentType<{
 type MenuRowProps = {
   icon: MenuIcon;
   label: string;
-  selected?: boolean;
 };
 
 type QuickCardProps = {
@@ -38,29 +34,11 @@ type QuickCardProps = {
   label: string;
 };
 
-const learnItems: MenuRowProps[] = [
-  { icon: PencilLine, label: 'New chat' },
-  { icon: Search, label: 'Search' },
-  { icon: BookOpen, label: 'Explain' },
-  { icon: CircleHelp, label: 'Quiz' },
-  { icon: CalendarDays, label: 'Study Plan' },
-];
+const learnItems: MenuRowProps[] = [{ icon: PencilLine, label: 'New chat' }];
 
 const spaceItems: MenuRowProps[] = [
   { icon: CirclePlus, label: 'New space' },
-  { icon: Folder, label: 'Lunivo', selected: true },
-  { icon: Folder, label: 'Exam Week' },
-  { icon: Folder, label: 'Math' },
-  { icon: Folder, label: 'Biology' },
   { icon: ChevronDown, label: 'Show more' },
-];
-
-const recentItems = [
-  'Biology test',
-  'History essay',
-  'English vocabulary',
-  'Chemistry formulas',
-  'Algebra practice',
 ];
 
 function QuickCard({ icon: Icon, label }: QuickCardProps) {
@@ -74,9 +52,9 @@ function QuickCard({ icon: Icon, label }: QuickCardProps) {
   );
 }
 
-function MenuRow({ icon: Icon, label, selected = false }: MenuRowProps) {
+function MenuRow({ icon: Icon, label }: MenuRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.menuRow, selected && styles.selectedRow, pressed && styles.pressed]}>
+    <Pressable style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
       <View style={styles.menuIconSlot}>
         <Icon color={ICON_COLOR} size={23} strokeWidth={1.85} />
       </View>
@@ -137,17 +115,6 @@ export function SideMenu() {
         <View style={styles.sectionRows}>
           {spaceItems.map((item) => (
             <MenuRow key={item.label} {...item} />
-          ))}
-        </View>
-
-        <SectionLabel>RECENT</SectionLabel>
-        <View style={styles.recentList}>
-          {recentItems.map((item) => (
-            <Pressable key={item} style={({ pressed }) => [styles.recentRow, pressed && styles.pressed]}>
-              <Text allowFontScaling={false} numberOfLines={1} style={styles.recentText}>
-                {item}
-              </Text>
-            </Pressable>
           ))}
         </View>
       </ScrollView>
@@ -257,9 +224,6 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 14,
   },
-  selectedRow: {
-    backgroundColor: 'rgba(31,36,48,0.045)',
-  },
   menuIconSlot: {
     width: 44,
     height: 40,
@@ -273,21 +237,6 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     fontWeight: '500',
     letterSpacing: -0.25,
-  },
-  recentList: {
-    paddingLeft: 74,
-    gap: 17,
-  },
-  recentRow: {
-    minHeight: 24,
-    justifyContent: 'center',
-  },
-  recentText: {
-    color: agentTheme.colors.text,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '500',
-    letterSpacing: -0.2,
   },
   settingsButton: {
     position: 'absolute',

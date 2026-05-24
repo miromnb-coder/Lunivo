@@ -1,46 +1,46 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Sparkles } from 'lucide-react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
+
+const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
+const MENU_ICON_COLOR = 'rgba(17,24,39,0.78)';
 
 type AgentHeaderProps = {
   appName: string;
   points: number;
 };
 
-function PointsSparkleIcon() {
-  return (
-    <View style={styles.sparkleIcon}>
-      <Text allowFontScaling={false} style={styles.sparkleSymbol}>
-        ✧
-      </Text>
-      <Text allowFontScaling={false} style={styles.sparklePlus}>
-        +
-      </Text>
-    </View>
-  );
-}
-
 export function AgentHeader({ appName, points }: AgentHeaderProps) {
   return (
     <View style={styles.header}>
-      <View style={styles.leftSide}>
+      <Pressable
+        accessibilityLabel="Open menu"
+        accessibilityRole="button"
+        hitSlop={{ top: 18, right: 22, bottom: 18, left: 14 }}
+        style={({ pressed }) => [styles.menuButton, pressed && styles.buttonPressed]}
+      >
         <View style={styles.menuIcon}>
-          <View style={styles.menuLine} />
-          <View style={[styles.menuLine, styles.menuLineShort]} />
+          <View style={styles.menuLineTop} />
+          <View style={styles.menuLineBottom} />
         </View>
-      </View>
+      </Pressable>
 
-      <Text allowFontScaling={false} style={styles.appName}>
+      <Text allowFontScaling={false} pointerEvents="none" style={styles.title}>
         {appName}
       </Text>
 
-      <View style={styles.rightSide}>
-        <View style={styles.pointsPill}>
-          <PointsSparkleIcon />
-          <Text allowFontScaling={false} style={styles.points}>
+      <View style={styles.rightSlot}>
+        <Pressable
+          accessibilityLabel="Open credits usage"
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.creditsBadge, pressed && styles.buttonPressed]}
+        >
+          <Sparkles size={20} color={agentTheme.colors.text} strokeWidth={1.85} />
+          <Text allowFontScaling={false} style={styles.creditsText}>
             {points}
           </Text>
-        </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -48,93 +48,82 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
 
 const styles = StyleSheet.create({
   header: {
-    width: '100%',
-    height: 66,
+    height: 82,
+    paddingLeft: 13,
+    paddingRight: 13,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    zIndex: 30,
+    overflow: 'visible',
   },
-  leftSide: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 84,
-    height: 66,
-    justifyContent: 'center',
+  menuButton: {
+    width: 62,
+    height: 62,
     alignItems: 'flex-start',
-    zIndex: 2,
+    justifyContent: 'center',
+    zIndex: 3,
   },
   menuIcon: {
-    height: 25,
+    width: 31,
+    height: 22,
     justifyContent: 'center',
     gap: 8,
   },
-  menuLine: {
+  menuLineTop: {
     width: 29,
-    height: 4,
+    height: 3.2,
     borderRadius: 999,
-    backgroundColor: '#3f4654',
+    backgroundColor: MENU_ICON_COLOR,
   },
-  menuLineShort: {
-    width: 23,
+  menuLineBottom: {
+    width: 20,
+    height: 3.2,
+    borderRadius: 999,
+    backgroundColor: MENU_ICON_COLOR,
   },
-  rightSide: {
+  title: {
     position: 'absolute',
+    left: 0,
     right: 0,
-    top: 0,
-    width: 112,
-    height: 66,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    zIndex: 2,
-  },
-  appName: {
-    width: '100%',
-    textAlign: 'center',
-    fontSize: 31,
-    lineHeight: 39,
-    fontWeight: '400',
+    alignSelf: 'center',
     color: agentTheme.colors.text,
-    fontFamily: 'Georgia',
-    zIndex: 1,
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: '700',
+    letterSpacing: -0.48,
+    textAlign: 'center',
+    fontFamily: serifFont,
   },
-  pointsPill: {
-    width: 96,
+  rightSlot: {
+    width: 112,
+    height: 62,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    zIndex: 3,
+  },
+  creditsBadge: {
+    minWidth: 94,
     height: 42,
+    paddingLeft: 16,
+    paddingRight: 16,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    borderRadius: 999,
+    gap: 9,
+    backgroundColor: 'rgba(255,255,255,0.62)',
     borderWidth: 1,
-    borderColor: '#e4e4e8',
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    borderColor: 'rgba(17,24,39,0.065)',
   },
-  sparkleIcon: {
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sparkleSymbol: {
-    marginTop: -2,
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: '400',
+  creditsText: {
     color: agentTheme.colors.text,
-  },
-  sparklePlus: {
-    position: 'absolute',
-    right: 0,
-    top: -1,
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: '800',
-    color: agentTheme.colors.text,
+    letterSpacing: -0.32,
   },
-  points: {
-    fontSize: 23,
-    lineHeight: 29,
-    fontWeight: '800',
-    color: agentTheme.colors.text,
+  buttonPressed: {
+    opacity: 0.58,
   },
 });

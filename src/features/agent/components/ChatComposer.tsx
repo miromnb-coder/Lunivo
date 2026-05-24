@@ -1,6 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -10,12 +12,42 @@ import {
 
 import { agentTheme } from '../constants/agentTheme';
 
+const RESTING_BOTTOM_OFFSET = 44;
+const ACTIVE_KEYBOARD_GAP = 14;
+
 export function ChatComposer() {
   const inputRef = useRef<TextInputType>(null);
   const [message, setMessage] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const canSend = message.trim().length > 0;
+
+  const wrapperBottom = useMemo(() => {
+    if (!isFocused || keyboardHeight === 0) {
+      return RESTING_BOTTOM_OFFSET;
+    }
+
+    return keyboardHeight + ACTIVE_KEYBOARD_GAP;
+  }, [isFocused, keyboardHeight]);
+
+  useEffect(() => {
+    const keyboardShowEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const keyboardHideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(keyboardShowEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+
+    const hideSubscription = Keyboard.addListener(keyboardHideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   function focusInput() {
     inputRef.current?.focus();
@@ -31,7 +63,7 @@ export function ChatComposer() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View pointerEvents="box-none" style={[styles.wrapper, { bottom: wrapperBottom }]}>
       <Pressable
         onPress={focusInput}
         style={[styles.composer, isFocused && styles.composerFocused]}
@@ -86,7 +118,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: 44,
   },
   composer: {
     minHeight: 72,

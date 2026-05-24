@@ -13,6 +13,7 @@ export type ChatMessage = {
 type ChatMessageListProps = {
   messages: ChatMessage[];
   bottomInset?: number;
+  scrollKey?: number;
   thinking?: boolean;
   topInset?: number;
 };
@@ -20,6 +21,7 @@ type ChatMessageListProps = {
 export function ChatMessageList({
   messages,
   bottomInset = 190,
+  scrollKey = 0,
   thinking = false,
   topInset = 28,
 }: ChatMessageListProps) {
@@ -40,6 +42,18 @@ export function ChatMessageList({
 
     return () => clearTimeout(timeoutId);
   }, [bottomInset, topInset]);
+
+  useEffect(() => {
+    if (scrollKey <= 0) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }, 24);
+
+    return () => clearTimeout(timeoutId);
+  }, [scrollKey]);
 
   return (
     <ScrollView

@@ -20,18 +20,21 @@ import { agentTheme } from '../constants/agentTheme';
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 34;
 const MESSAGE_LIST_BOTTOM_GAP = 24;
+const TEMPORARY_RESPONSE_DELAY_MS = 900;
 
 export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
   const [composerHeight, setComposerHeight] = useState(66);
   const [composerBottomInset, setComposerBottomInset] = useState(CLOSED_COMPOSER_BOTTOM);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = messages.length > 0 || isThinking;
   const messageListBottomInset = useMemo(
     () => composerHeight + composerBottomInset + MESSAGE_LIST_BOTTOM_GAP,
     [composerBottomInset, composerHeight],
@@ -86,20 +89,48 @@ export function AgentHomeScreen() {
   function handleSend() {
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage) {
+    if (!trimmedMessage || isThinking) {
       return;
+    }
+
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current);
     }
 
     setMessages((currentMessages) => [
       ...currentMessages,
       {
-        id: `${Date.now()}`,
+        id: `${Date.now()}-user`,
         role: 'user',
         content: trimmedMessage,
       },
     ]);
     setMessage('');
+    setIsThinking(true);
+    animateHero(false, 160);
+
+    responseTimeoutRef.current = setTimeout(() => {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: `${Date.now()}-assistant`,
+          role: 'assistant',
+          content:
+            'I can help with that. Soon this will be connected to the real Lunivo AI study agent.',
+        },
+      ]);
+      setIsThinking(false);
+      responseTimeoutRef.current = null;
+    }, TEMPORARY_RESPONSE_DELAY_MS);
   }
+
+  useEffect(() => {
+    return () => {
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -151,7 +182,11 @@ export function AgentHomeScreen() {
         <AgentHeader appName="Lunivo" points={263} />
 
         {hasMessages ? (
-          <ChatMessageList messages={messages} bottomInset={messageListBottomInset} />
+          <ChatMessageList
+            messages={messages}
+            bottomInset={messageListBottomInset}
+            thinking={isThinking}
+          />
         ) : null}
 
         <Animated.View

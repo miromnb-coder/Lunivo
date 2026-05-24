@@ -27,7 +27,7 @@ import { sendMessageToAgent } from '../services/sendMessageToAgent';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
-const MESSAGE_LIST_BOTTOM_INSET = 154;
+const MESSAGE_LIST_BOTTOM_INSET = 260;
 const MESSAGE_LIST_TOP_INSET = 28;
 
 function createMessageId(role: ChatMessage['role']) {

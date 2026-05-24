@@ -17,14 +17,14 @@ import { HeroMessage } from '../components/HeroMessage';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
 
-const CLOSED_COMPOSER_BOTTOM = 44;
-const KEYBOARD_GAP = 18;
+const CLOSED_COMPOSER_BOTTOM = 38;
+const KEYBOARD_GAP = 34;
 const MESSAGE_LIST_BOTTOM_GAP = 24;
 
 export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [composerHeight, setComposerHeight] = useState(72);
+  const [composerHeight, setComposerHeight] = useState(66);
   const [composerBottomInset, setComposerBottomInset] = useState(CLOSED_COMPOSER_BOTTOM);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
@@ -156,8 +156,7 @@ export function AgentHomeScreen() {
         <Animated.View
           pointerEvents={hasMessages ? 'none' : 'box-none'}
           style={[
-            styles.heroContent,
-            hasMessages && styles.heroContentOverlay,
+            hasMessages ? styles.heroContentOverlay : styles.startContent,
             {
               opacity: heroOpacity,
               transform: [{ translateY: heroTranslateY }],
@@ -195,21 +194,25 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: agentTheme.spacing.screen,
+    paddingHorizontal: 18,
+    paddingBottom: 220,
     zIndex: 0,
   },
-  heroContent: {
+  startContent: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 104,
   },
   heroContentOverlay: {
     ...StyleSheet.absoluteFillObject,
-    paddingHorizontal: agentTheme.spacing.screen,
-    paddingTop: 66,
+    paddingHorizontal: 18,
+    paddingTop: 104,
   },
   composerWrap: {
     position: 'absolute',
-    left: 24,
-    right: 24,
+    left: 16,
+    right: 16,
     zIndex: 2,
   },
 });

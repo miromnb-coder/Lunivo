@@ -180,13 +180,18 @@ export function AgentHomeScreen() {
     animateHero(false, 160);
 
     try {
-      const { answer } = await sendMessageToAgent({
+      const { answer, conversationId } = await sendMessageToAgent({
+        conversationId: activeConversationId,
         messages: nextMessages,
         modelMode: 'auto',
       });
 
       if (sendRunRef.current !== runId) {
         return;
+      }
+
+      if (conversationId) {
+        setActiveConversationId(conversationId);
       }
 
       setMessages((currentMessages) => [

@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: 36,
+    bottom: 44,
   },
   inputBar: {
     height: 72,

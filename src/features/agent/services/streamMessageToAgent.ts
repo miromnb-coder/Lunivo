@@ -80,17 +80,6 @@ function parseStreamEvent(rawEvent: string): StreamEvent | null {
   };
 }
 
-function getReadableStream(response: Response) {
-  const body = response.body as unknown as {
-    getReader?: () => {
-      read: () => Promise<{ done: boolean; value?: Uint8Array }>;
-      releaseLock?: () => void;
-    };
-  } | null;
-
-  return body?.getReader ? body : null;
-}
-
 function extractErrorMessage(payload: unknown, fallback: string) {
   if (!payload || typeof payload !== 'object') {
     return fallback;
@@ -103,73 +92,58 @@ function extractErrorMessage(payload: unknown, fallback: string) {
   return detail ?? message ?? fallback;
 }
 
-async function getResponseError(response: Response) {
-  try {
-    const payload = await response.json();
-    return extractErrorMessage(payload, 'Lunivo stream request failed.');
-  } catch {
-    try {
-      return (await response.text()).trim() || 'Lunivo stream request failed.';
-    } catch {
-      return 'Lunivo stream request failed.';
+function handleStreamEvent(event: StreamEvent, onDelta: (delta: string) => void) {
+  if (event.eventName === 'delta') {
+    const payload = JSON.parse(event.data) as { delta?: unknown };
+    const delta = typeof payload.delta === 'string' ? payload.delta : '';
+
+    if (delta) {
+      onDelta(delta);
+      return delta;
     }
   }
+
+  if (event.eventName === 'error') {
+    const payload = JSON.parse(event.data) as { message?: unknown };
+    throw new Error(typeof payload.message === 'string' ? payload.message : 'Lunivo stream failed.');
+  }
+
+  return '';
 }
 
-export async function streamMessageToAgent({
-  conversationId,
-  messages,
+function readStreamWithXHR({
+  accessToken,
+  body,
   onDelta,
   signal,
-}: StreamMessageToAgentInput) {
-  const { supabasePublishableKey, supabaseUrl } = getSupabaseConfig();
-  const accessToken = await getAccessToken();
-  const response = await fetch(`${supabaseUrl}/functions/v1/${LUNIVO_STREAM_FUNCTION_NAME}`, {
-    method: 'POST',
-    headers: {
-      apikey: supabasePublishableKey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    signal,
-    body: JSON.stringify({
-      conversationId,
-      modelMode: LUNIVO_STREAM_MODEL_MODE,
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-    }),
-  });
+  supabasePublishableKey,
+  url,
+}: {
+  accessToken: string;
+  body: string;
+  onDelta: (delta: string) => void;
+  signal?: AbortSignal;
+  supabasePublishableKey: string;
+  url: string;
+}) {
+  return new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let processedLength = 0;
+    let buffer = '';
+    let answer = '';
+    let settled = false;
 
-  if (!response.ok) {
-    throw new Error(await getResponseError(response));
-  }
-
-  const stream = getReadableStream(response);
-
-  if (!stream) {
-    throw new Error('Streaming is not available in this runtime.');
-  }
-
-  const reader = stream.getReader!();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let answer = '';
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
+    function finishError(error: unknown) {
+      if (settled) {
+        return;
       }
 
-      if (!value) {
-        continue;
-      }
+      settled = true;
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
 
-      buffer += decoder.decode(value, { stream: true });
+    function processChunk(chunk: string) {
+      buffer += chunk;
       const rawEvents = buffer.split('\n\n');
       buffer = rawEvents.pop() ?? '';
 
@@ -180,49 +154,103 @@ export async function streamMessageToAgent({
           return;
         }
 
-        if (event.eventName === 'delta') {
-          try {
-            const payload = JSON.parse(event.data) as { delta?: unknown };
-            const delta = typeof payload.delta === 'string' ? payload.delta : '';
-
-            if (delta) {
-              answer += delta;
-              onDelta(delta);
-            }
-          } catch {
-            // Ignore malformed stream chunks.
-          }
-        }
-
-        if (event.eventName === 'error') {
-          try {
-            const payload = JSON.parse(event.data) as { message?: unknown };
-            throw new Error(typeof payload.message === 'string' ? payload.message : 'Lunivo stream failed.');
-          } catch (error) {
-            if (error instanceof Error) {
-              throw error;
-            }
-          }
+        try {
+          const delta = handleStreamEvent(event, onDelta);
+          answer += delta;
+        } catch (error) {
+          finishError(error);
         }
       });
     }
 
-    if (buffer.trim()) {
-      const event = parseStreamEvent(buffer);
+    const abortHandler = () => {
+      xhr.abort();
+      finishError(new Error('Stream was cancelled.'));
+    };
 
-      if (event?.eventName === 'delta') {
-        const payload = JSON.parse(event.data) as { delta?: unknown };
-        const delta = typeof payload.delta === 'string' ? payload.delta : '';
+    signal?.addEventListener('abort', abortHandler, { once: true });
 
-        if (delta) {
-          answer += delta;
-          onDelta(delta);
+    xhr.open('POST', url);
+    xhr.setRequestHeader('apikey', supabasePublishableKey);
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'text/event-stream');
+
+    xhr.onreadystatechange = () => {
+      if (settled) {
+        return;
+      }
+
+      if (xhr.readyState === XMLHttpRequest.LOADING || xhr.readyState === XMLHttpRequest.DONE) {
+        const nextText = xhr.responseText.slice(processedLength);
+        processedLength = xhr.responseText.length;
+
+        if (nextText) {
+          processChunk(nextText);
         }
       }
-    }
-  } finally {
-    reader.releaseLock?.();
-  }
+
+      if (xhr.readyState === XMLHttpRequest.DONE && !settled) {
+        signal?.removeEventListener('abort', abortHandler);
+
+        if (buffer.trim()) {
+          processChunk('\n\n');
+        }
+
+        if (xhr.status < 200 || xhr.status >= 300) {
+          try {
+            const payload = JSON.parse(xhr.responseText);
+            finishError(new Error(extractErrorMessage(payload, 'Lunivo stream request failed.')));
+          } catch {
+            finishError(new Error(xhr.responseText || 'Lunivo stream request failed.'));
+          }
+          return;
+        }
+
+        settled = true;
+        resolve(answer);
+      }
+    };
+
+    xhr.onerror = () => {
+      signal?.removeEventListener('abort', abortHandler);
+      finishError(new Error('Lunivo stream network request failed.'));
+    };
+
+    xhr.ontimeout = () => {
+      signal?.removeEventListener('abort', abortHandler);
+      finishError(new Error('Lunivo stream request timed out.'));
+    };
+
+    xhr.send(body);
+  });
+}
+
+export async function streamMessageToAgent({
+  conversationId,
+  messages,
+  onDelta,
+  signal,
+}: StreamMessageToAgentInput) {
+  const { supabasePublishableKey, supabaseUrl } = getSupabaseConfig();
+  const accessToken = await getAccessToken();
+  const body = JSON.stringify({
+    conversationId,
+    modelMode: LUNIVO_STREAM_MODEL_MODE,
+    messages: messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  });
+  const url = `${supabaseUrl}/functions/v1/${LUNIVO_STREAM_FUNCTION_NAME}`;
+  const answer = await readStreamWithXHR({
+    accessToken,
+    body,
+    onDelta,
+    signal,
+    supabasePublishableKey,
+    url,
+  });
 
   return {
     answer,

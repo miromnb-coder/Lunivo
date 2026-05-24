@@ -1,3 +1,4 @@
+import Markdown from 'react-native-markdown-display';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
@@ -32,9 +33,9 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         <Text allowFontScaling={false} style={styles.assistantLabel}>
           Lunivo
         </Text>
-        <Text allowFontScaling={false} style={[styles.messageText, styles.assistantText]}>
+        <Markdown mergeStyle={false} style={markdownStyles}>
           {message.content}
-        </Text>
+        </Markdown>
       </View>
     </View>
   );
@@ -89,8 +90,90 @@ const styles = StyleSheet.create({
     color: agentTheme.colors.text,
     fontWeight: '500',
   },
-  assistantText: {
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
     color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
     fontWeight: '500',
+    letterSpacing: -0.18,
+  },
+  text: {
+    color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
+    fontWeight: '500',
+    letterSpacing: -0.18,
+  },
+  strong: {
+    color: agentTheme.colors.text,
+    fontWeight: '800',
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 10,
+  },
+  bullet_list: {
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  ordered_list: {
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  list_item: {
+    marginBottom: 4,
+  },
+  bullet_list_icon: {
+    color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
+    marginRight: 6,
+  },
+  ordered_list_icon: {
+    color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
+    marginRight: 6,
+  },
+  bullet_list_content: {
+    flex: 1,
+  },
+  ordered_list_content: {
+    flex: 1,
+  },
+  heading1: {
+    color: agentTheme.colors.text,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  heading2: {
+    color: agentTheme.colors.text,
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: '800',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  heading3: {
+    color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
+    fontWeight: '800',
+    marginTop: 4,
+    marginBottom: 7,
+  },
+  code_inline: {
+    color: agentTheme.colors.text,
+    backgroundColor: 'rgba(31,36,48,0.06)',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    fontSize: 15.5,
   },
 });

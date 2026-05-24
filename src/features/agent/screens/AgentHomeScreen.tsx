@@ -13,6 +13,7 @@ import {
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
 import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList';
+import { DrawerShell } from '../components/DrawerShell';
 import { HeroMessage } from '../components/HeroMessage';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
@@ -198,48 +199,52 @@ export function AgentHomeScreen() {
   }, [animateHero, hasMessages, keyboardOpen]);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      {keyboardOpen ? <Pressable onPress={dismissComposer} style={styles.dismissLayer} /> : null}
+    <DrawerShell>
+      {({ openDrawer }) => (
+        <SafeAreaView style={styles.screen}>
+          {keyboardOpen ? <Pressable onPress={dismissComposer} style={styles.dismissLayer} /> : null}
 
-      <View style={styles.content}>
-        <AgentHeader appName="Lunivo" points={263} />
+          <View style={styles.content}>
+            <AgentHeader appName="Lunivo" onMenuPress={openDrawer} points={263} />
 
-        {hasMessages ? (
-          <ChatMessageList
-            messages={messages}
-            bottomInset={MESSAGE_LIST_BOTTOM_INSET}
-            thinking={isThinking}
-            topInset={MESSAGE_LIST_TOP_INSET}
-          />
-        ) : null}
+            {hasMessages ? (
+              <ChatMessageList
+                messages={messages}
+                bottomInset={MESSAGE_LIST_BOTTOM_INSET}
+                thinking={isThinking}
+                topInset={MESSAGE_LIST_TOP_INSET}
+              />
+            ) : null}
 
-        <Animated.View
-          pointerEvents={hasMessages ? 'none' : 'box-none'}
-          style={[
-            hasMessages ? styles.heroContentOverlay : styles.startContent,
-            {
-              opacity: heroOpacity,
-              transform: [{ translateY: heroTranslateY }],
-            },
-          ]}
-        >
-          <HeroMessage />
-          <QuickActions />
-        </Animated.View>
-      </View>
+            <Animated.View
+              pointerEvents={hasMessages ? 'none' : 'box-none'}
+              style={[
+                hasMessages ? styles.heroContentOverlay : styles.startContent,
+                {
+                  opacity: heroOpacity,
+                  transform: [{ translateY: heroTranslateY }],
+                },
+              ]}
+            >
+              <HeroMessage />
+              <QuickActions />
+            </Animated.View>
+          </View>
 
-      <Animated.View
-        pointerEvents="box-none"
-        style={[styles.composerWrap, { bottom: composerBottom }]}
-      >
-        <ChatComposer
-          value={message}
-          onBlur={handleComposerBlur}
-          onChangeText={setMessage}
-          onSend={handleSend}
-        />
-      </Animated.View>
-    </SafeAreaView>
+          <Animated.View
+            pointerEvents="box-none"
+            style={[styles.composerWrap, { bottom: composerBottom }]}
+          >
+            <ChatComposer
+              value={message}
+              onBlur={handleComposerBlur}
+              onChangeText={setMessage}
+              onSend={handleSend}
+            />
+          </Animated.View>
+        </SafeAreaView>
+      )}
+    </DrawerShell>
   );
 }
 

@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 type ChatRole = "user" | "assistant" | "system" | "developer";
 type ModelMode = "auto" | "fast" | "smart";
@@ -9,8 +10,14 @@ type IncomingMessage = {
 };
 
 type ChatRequestBody = {
+  conversationId?: unknown;
   modelMode?: ModelMode;
   messages?: IncomingMessage[];
+};
+
+type NormalizedMessage = {
+  role: "user" | "assistant";
+  content: string;
 };
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -18,6 +25,7 @@ const DEFAULT_MODEL = "gpt-5-nano";
 const SMART_MODEL = "gpt-5-mini";
 const MAX_MESSAGES = 16;
 const MAX_MESSAGE_CHARS = 4_000;
+const MAX_TITLE_CHARS = 54;
 const MAX_OUTPUT_TOKENS = 900;
 
 const corsHeaders = {
@@ -46,7 +54,7 @@ function selectModel(modelMode: ModelMode = "auto") {
   return DEFAULT_MODEL;
 }
 
-function normalizeMessages(messages: IncomingMessage[] | undefined) {
+function normalizeMessages(messages: IncomingMessage[] | undefined): NormalizedMessage[] {
   if (!Array.isArray(messages)) {
     return [];
   }
@@ -63,6 +71,24 @@ function normalizeMessages(messages: IncomingMessage[] | undefined) {
       };
     })
     .filter((message) => message.content.length > 0);
+}
+
+function createConversationTitle(message: string) {
+  const cleanMessage = message.replace(/\s+/g, " ").trim();
+
+  if (!cleanMessage) {
+    return "New chat";
+  }
+
+  if (cleanMessage.length <= MAX_TITLE_CHARS) {
+    return cleanMessage;
+  }
+
+  return `${cleanMessage.slice(0, MAX_TITLE_CHARS - 1).trim()}…`;
+}
+
+function getLatestUserMessage(messages: NormalizedMessage[]) {
+  return [...messages].reverse().find((message) => message.role === "user") ?? null;
 }
 
 function extractOutputText(data: unknown) {
@@ -102,6 +128,68 @@ function getOpenAIError(data: unknown) {
     : "OpenAI request failed.";
 }
 
+async function getOrCreateConversation({
+  accessToken,
+  conversationId,
+  latestUserMessage,
+  modelMode,
+  userId,
+}: {
+  accessToken: string;
+  conversationId: string | null;
+  latestUserMessage: NormalizedMessage;
+  modelMode: ModelMode;
+  userId: string;
+}) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase environment variables are missing.");
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+
+  if (conversationId) {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.id) {
+      return { conversationId: data.id, supabase };
+    }
+  }
+
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .insert({
+      user_id: userId,
+      title: createConversationTitle(latestUserMessage.content),
+      model_mode: modelMode,
+    })
+    .select("id")
+    .single();
+
+  if (conversationError) {
+    throw conversationError;
+  }
+
+  return { conversationId: conversation.id as string, supabase };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -137,8 +225,78 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Message is required" }, 400);
   }
 
+  const latestUserMessage = getLatestUserMessage(messages);
+
+  if (!latestUserMessage) {
+    return jsonResponse({ error: "User message is required" }, 400);
+  }
+
+  const authorization = req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
+  const accessToken = authorization.replace(/^Bearer\s+/i, "").trim();
+
+  if (!accessToken) {
+    return jsonResponse({ error: "Authentication required" }, 401);
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return jsonResponse({ error: "Supabase environment variables are missing" }, 500);
+  }
+
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+
+  const { data: userData, error: userError } = await authClient.auth.getUser(accessToken);
+
+  if (userError || !userData.user) {
+    return jsonResponse({ error: "Invalid user session" }, 401);
+  }
+
   const modelMode: ModelMode = body.modelMode === "smart" || body.modelMode === "fast" ? body.modelMode : "auto";
   const model = selectModel(modelMode);
+  const requestedConversationId = typeof body.conversationId === "string" ? body.conversationId : null;
+
+  let savedConversationId: string;
+  let supabaseForUser: ReturnType<typeof createClient>;
+
+  try {
+    const result = await getOrCreateConversation({
+      accessToken,
+      conversationId: requestedConversationId,
+      latestUserMessage,
+      modelMode,
+      userId: userData.user.id,
+    });
+
+    savedConversationId = result.conversationId;
+    supabaseForUser = result.supabase;
+
+    const { error: userMessageError } = await supabaseForUser.from("messages").insert({
+      conversation_id: savedConversationId,
+      user_id: userData.user.id,
+      role: "user",
+      content: latestUserMessage.content,
+    });
+
+    if (userMessageError) {
+      throw userMessageError;
+    }
+  } catch (error) {
+    return jsonResponse(
+      {
+        error: "Could not save user message",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+    );
+  }
 
   const instructions = [
     "You are Lunivo, a calm personal AI study agent for students.",
@@ -172,6 +330,7 @@ Deno.serve(async (req: Request) => {
         {
           error: "OpenAI request failed",
           detail: getOpenAIError(data),
+          conversationId: savedConversationId,
           model,
           modelMode,
         },
@@ -185,6 +344,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(
         {
           error: "Empty AI answer",
+          conversationId: savedConversationId,
           model,
           modelMode,
         },
@@ -192,8 +352,30 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const { error: assistantMessageError } = await supabaseForUser.from("messages").insert({
+      conversation_id: savedConversationId,
+      user_id: userData.user.id,
+      role: "assistant",
+      content: answer,
+      model,
+    });
+
+    if (assistantMessageError) {
+      return jsonResponse(
+        {
+          error: "Could not save assistant message",
+          detail: assistantMessageError.message,
+          conversationId: savedConversationId,
+          model,
+          modelMode,
+        },
+        500,
+      );
+    }
+
     return jsonResponse({
       answer,
+      conversationId: savedConversationId,
       model,
       modelMode,
       provider: "openai",
@@ -203,6 +385,7 @@ Deno.serve(async (req: Request) => {
       {
         error: "AI request failed",
         detail: error instanceof Error ? error.message : String(error),
+        conversationId: savedConversationId,
         model,
         modelMode,
       },

@@ -77,7 +77,7 @@ export function ChatComposer({
   const [inputWidth, setInputWidth] = useState(0);
 
   const hasText = value.trim().length > 0;
-  const isActive = focused || forcedActive || hasText;
+  const isActive = focused || forcedActive;
   const canSend = hasText;
 
   const estimatedInputHeight = useMemo(
@@ -124,10 +124,10 @@ export function ChatComposer({
   }, [isActive, targetInputHeight, value.length]);
 
   useEffect(() => {
-    if (!focused && !hasText) {
+    if (!focused) {
       setForcedActive(false);
     }
-  }, [focused, hasText]);
+  }, [focused]);
 
   function activateComposer() {
     setForcedActive(true);
@@ -142,11 +142,7 @@ export function ChatComposer({
 
   function handleBlur() {
     setFocused(false);
-
-    if (!hasText) {
-      setForcedActive(false);
-    }
-
+    setForcedActive(false);
     onBlur?.();
   }
 

@@ -2,6 +2,7 @@ import {
   BookOpen,
   ChevronDown,
   CirclePlus,
+  MessageCircle,
   PencilLine,
   Search,
   Settings,
@@ -13,6 +14,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { agentTheme } from '../constants/agentTheme';
+import type { ConversationSummary } from '../services/chatHistory';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const ICON_COLOR = agentTheme.colors.text;
@@ -27,6 +29,7 @@ type MenuIcon = ComponentType<{
 type MenuRowProps = {
   icon: MenuIcon;
   label: string;
+  onPress?: () => void;
 };
 
 type QuickCardProps = {
@@ -34,7 +37,12 @@ type QuickCardProps = {
   label: string;
 };
 
-const learnItems: MenuRowProps[] = [{ icon: PencilLine, label: 'New chat' }];
+type SideMenuProps = {
+  avatarInitials: string;
+  conversations: ConversationSummary[];
+  onNewChat: () => void;
+  onSelectConversation: (conversationId: string) => void;
+};
 
 const spaceItems: MenuRowProps[] = [
   { icon: CirclePlus, label: 'New space' },
@@ -52,14 +60,25 @@ function QuickCard({ icon: Icon, label }: QuickCardProps) {
   );
 }
 
-function MenuRow({ icon: Icon, label }: MenuRowProps) {
+function MenuRow({ icon: Icon, label, onPress }: MenuRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
       <View style={styles.menuIconSlot}>
         <Icon color={ICON_COLOR} size={23} strokeWidth={1.85} />
       </View>
-      <Text allowFontScaling={false} style={styles.menuRowText}>
+      <Text allowFontScaling={false} numberOfLines={1} style={styles.menuRowText}>
         {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ChatRow({ conversation, onPress }: { conversation: ConversationSummary; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.chatRow, pressed && styles.pressed]}>
+      <MessageCircle color={ICON_COLOR} size={21} strokeWidth={1.85} />
+      <Text allowFontScaling={false} numberOfLines={1} style={styles.chatRowText}>
+        {conversation.title}
       </Text>
     </Pressable>
   );
@@ -73,7 +92,12 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-export function SideMenu() {
+export function SideMenu({
+  avatarInitials,
+  conversations,
+  onNewChat,
+  onSelectConversation,
+}: SideMenuProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -90,9 +114,9 @@ export function SideMenu() {
             <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
               <Search color={ICON_COLOR} size={27} strokeWidth={1.9} />
             </Pressable>
-            <Pressable accessibilityLabel="Open profile" accessibilityRole="button" style={styles.avatar}>
+            <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
               <Text allowFontScaling={false} style={styles.avatarText}>
-                MS
+                {avatarInitials}
               </Text>
             </Pressable>
           </View>
@@ -106,9 +130,24 @@ export function SideMenu() {
 
         <SectionLabel>LEARN</SectionLabel>
         <View style={styles.sectionRows}>
-          {learnItems.map((item) => (
-            <MenuRow key={item.label} {...item} />
-          ))}
+          <MenuRow icon={PencilLine} label="New chat" onPress={onNewChat} />
+        </View>
+
+        <SectionLabel>CHATS</SectionLabel>
+        <View style={styles.chatRows}>
+          {conversations.length > 0 ? (
+            conversations.map((conversation) => (
+              <ChatRow
+                key={conversation.id}
+                conversation={conversation}
+                onPress={() => onSelectConversation(conversation.id)}
+              />
+            ))
+          ) : (
+            <Text allowFontScaling={false} style={styles.emptyChatsText}>
+              Your saved chats will appear here.
+            </Text>
+          )}
         </View>
 
         <SectionLabel>SPACES</SectionLabel>
@@ -233,10 +272,40 @@ const styles = StyleSheet.create({
   },
   menuRowText: {
     color: agentTheme.colors.text,
+    flex: 1,
     fontSize: 18,
     lineHeight: 23,
     fontWeight: '500',
     letterSpacing: -0.25,
+  },
+  chatRows: {
+    marginBottom: 24,
+  },
+  chatRow: {
+    minHeight: 42,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingLeft: 21,
+    paddingRight: 14,
+  },
+  chatRowText: {
+    color: agentTheme.colors.text,
+    flex: 1,
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: '500',
+    letterSpacing: -0.22,
+  },
+  emptyChatsText: {
+    color: agentTheme.colors.mutedText,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '400',
+    letterSpacing: -0.16,
+    marginLeft: 21,
+    marginBottom: 6,
   },
   settingsButton: {
     position: 'absolute',

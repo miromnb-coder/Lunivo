@@ -1,45 +1,45 @@
+import { Feather } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
 
+type FeatherIconName = ComponentProps<typeof Feather>['name'];
+
 type QuickActionButtonProps = {
-  icon: string;
+  iconName: FeatherIconName;
   label: string;
 };
 
-export function QuickActionButton({ icon, label }: QuickActionButtonProps) {
+export function QuickActionButton({ iconName, label }: QuickActionButtonProps) {
   return (
     <View style={styles.button}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.label}>{label}</Text>
+      <Feather name={iconName} size={31} color={agentTheme.colors.softText} />
+      <Text allowFontScaling={false} style={styles.label}>
+        {label}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: 118,
-    height: 114,
+    width: 102,
+    height: 92,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
+    borderRadius: 21,
     backgroundColor: agentTheme.colors.surface,
     shadowColor: agentTheme.colors.shadow,
-    shadowOpacity: 0.26,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 7,
-  },
-  icon: {
-    minHeight: 38,
-    fontSize: 34,
-    lineHeight: 38,
-    color: agentTheme.colors.softText,
+    shadowOpacity: 0.22,
+    shadowRadius: 19,
+    shadowOffset: { width: 0, height: 11 },
+    elevation: 6,
   },
   label: {
-    marginTop: 13,
-    fontSize: 22,
-    lineHeight: 26,
+    marginTop: 10,
+    fontSize: 17,
+    lineHeight: 22,
     fontWeight: '800',
     color: '#111111',
   },

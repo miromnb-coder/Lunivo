@@ -27,8 +27,10 @@ import { sendMessageToAgent } from '../services/sendMessageToAgent';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
-const MESSAGE_LIST_BOTTOM_INSET = 260;
+const CLOSED_MESSAGE_BOTTOM_GAP = 260;
+const KEYBOARD_MESSAGE_BOTTOM_GAP = 96;
 const MESSAGE_LIST_TOP_INSET = 28;
+const DEFAULT_COMPOSER_HEIGHT = 66;
 
 function createMessageId(role: ChatMessage['role']) {
   return `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -43,6 +45,7 @@ function createAgentErrorMessage(error: unknown) {
 export function AgentHomeScreen() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [avatarInitials, setAvatarInitials] = useState('MS');
+  const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -54,6 +57,9 @@ export function AgentHomeScreen() {
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
   const hasMessages = messages.length > 0 || isThinking;
+  const messageListBottomInset = keyboardOpen
+    ? composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
+    : CLOSED_MESSAGE_BOTTOM_GAP;
 
   const loadMenuData = useCallback(async () => {
     try {
@@ -278,7 +284,7 @@ export function AgentHomeScreen() {
             {hasMessages ? (
               <ChatMessageList
                 messages={messages}
-                bottomInset={MESSAGE_LIST_BOTTOM_INSET}
+                bottomInset={messageListBottomInset}
                 thinking={isThinking}
                 topInset={MESSAGE_LIST_TOP_INSET}
               />
@@ -307,6 +313,7 @@ export function AgentHomeScreen() {
               value={message}
               onBlur={handleComposerBlur}
               onChangeText={setMessage}
+              onHeightChange={setComposerHeight}
               onSend={handleSend}
             />
           </Animated.View>

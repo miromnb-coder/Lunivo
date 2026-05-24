@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -18,17 +18,17 @@ import {
 
 import { agentTheme } from '../constants/agentTheme';
 
+const COMPOSER_ICON_COLOR = 'rgba(15,17,21,0.84)';
+const DISABLED_ICON_COLOR = 'rgba(110,113,124,0.42)';
+
 const INPUT_LINE_HEIGHT = 22;
 const MIN_INPUT_HEIGHT = INPUT_LINE_HEIGHT;
 const MAX_INPUT_HEIGHT = 112;
 const ESTIMATED_CHARACTER_WIDTH = 8.4;
 const HEIGHT_REPORT_THRESHOLD = 6;
 
-const IDLE_COMPOSER_HEIGHT = 72;
-const ACTIVE_COMPOSER_MIN_HEIGHT = 124;
-
-const COMPOSER_ICON_COLOR = 'rgba(15,17,21,0.84)';
-const DISABLED_ICON_COLOR = 'rgba(110,113,124,0.42)';
+const IDLE_COMPOSER_HEIGHT = 66;
+const ACTIVE_COMPOSER_MIN_HEIGHT = 112;
 
 type ChatComposerProps = {
   value: string;
@@ -188,11 +188,11 @@ export function ChatComposer({
     }),
     paddingHorizontal: transition.interpolate({
       inputRange: [0, 1],
-      outputRange: [13, 16],
+      outputRange: [10, 16],
     }),
     paddingTop: transition.interpolate({
       inputRange: [0, 1],
-      outputRange: [8, 16],
+      outputRange: [8, 14],
     }),
     paddingBottom: transition.interpolate({
       inputRange: [0, 1],
@@ -232,7 +232,7 @@ export function ChatComposer({
           {!isActive ? (
             <View pointerEvents="box-none" style={styles.idleLeftSlot}>
               <ComposerButton accessibilityLabel="Add attachment" onPress={() => {}} size="idle">
-                <Feather name="plus" size={32} color={COMPOSER_ICON_COLOR} />
+                <Ionicons name="add-outline" size={30} color={COMPOSER_ICON_COLOR} />
               </ComposerButton>
             </View>
           ) : null}
@@ -242,13 +242,13 @@ export function ChatComposer({
           <View style={styles.controlsRow}>
             <View style={styles.leftControls}>
               <ComposerButton accessibilityLabel="Add attachment" onPress={() => {}}>
-                <Feather name="plus" size={30} color={COMPOSER_ICON_COLOR} />
+                <Ionicons name="add-outline" size={28} color={COMPOSER_ICON_COLOR} />
               </ComposerButton>
             </View>
 
             <View style={styles.rightControls}>
               <ComposerButton accessibilityLabel="Use voice" onPress={() => {}}>
-                <Feather name="mic" size={25} color={COMPOSER_ICON_COLOR} />
+                <Ionicons name="mic-outline" size={25} color={COMPOSER_ICON_COLOR} />
               </ComposerButton>
 
               <ComposerButton
@@ -258,7 +258,11 @@ export function ChatComposer({
                 onPress={handleSend}
                 send
               >
-                <Feather name="arrow-up" size={25} color={canSend ? '#ffffff' : DISABLED_ICON_COLOR} />
+                <Ionicons
+                  name="arrow-up-outline"
+                  size={25}
+                  color={canSend ? '#ffffff' : DISABLED_ICON_COLOR}
+                />
               </ComposerButton>
             </View>
           </View>
@@ -311,10 +315,10 @@ const styles = StyleSheet.create({
   composer: {
     backgroundColor: '#fbfbfa',
     borderWidth: 1,
-    borderColor: 'rgba(17,24,39,0.035)',
-    shadowColor: agentTheme.colors.shadow,
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
+    borderColor: 'rgba(17,24,39,0.032)',
+    shadowColor: '#9a9aa3',
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
     shadowOffset: { width: 0, height: 12 },
     elevation: 7,
   },
@@ -326,7 +330,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inputShellIdle: {
-    minHeight: 56,
+    minHeight: 48,
     justifyContent: 'center',
   },
   inputShellActive: {
@@ -336,26 +340,25 @@ const styles = StyleSheet.create({
     margin: 0,
     padding: 0,
     color: agentTheme.colors.text,
-    fontSize: 17,
+    fontSize: 17.5,
     fontWeight: '500',
     letterSpacing: -0.2,
     lineHeight: INPUT_LINE_HEIGHT,
   },
   inputIdle: {
     width: '100%',
-    paddingLeft: 74,
+    paddingLeft: 66,
     paddingRight: 10,
     paddingTop: 1,
+    fontWeight: '400',
   },
   inputActive: {
     width: '100%',
-    fontSize: 21,
-    lineHeight: 27,
   },
   idleLeftSlot: {
     position: 'absolute',
     left: 0,
-    top: 3,
+    top: -1,
   },
   controlsRow: {
     marginTop: 14,
@@ -373,27 +376,27 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   button: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 23,
+    borderRadius: 21,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: 'rgba(17,24,39,0.055)',
+    borderColor: 'rgba(17,24,39,0.052)',
   },
   buttonIdle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   sendButton: {
     backgroundColor: 'rgba(17,24,39,0.065)',
     borderColor: 'rgba(17,24,39,0.052)',
   },
   buttonFilled: {
-    backgroundColor: agentTheme.colors.text,
-    borderColor: agentTheme.colors.text,
+    backgroundColor: '#111111',
+    borderColor: '#111111',
     shadowColor: '#111827',
     shadowOpacity: 0.12,
     shadowRadius: 11,

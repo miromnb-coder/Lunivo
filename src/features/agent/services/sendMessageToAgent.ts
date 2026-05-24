@@ -20,6 +20,8 @@ type SendMessageToAgentInput = {
   modelMode?: AgentModelMode;
 };
 
+const LUNIVO_CHAT_FUNCTION_NAME = 'lunivo-chat-v2';
+
 async function getFunctionErrorMessage(error: unknown) {
   const fallback = error instanceof Error ? error.message : 'Edge Function request failed.';
   const context = (error as { context?: { json?: () => Promise<unknown>; text?: () => Promise<string> } })?.context;
@@ -59,7 +61,7 @@ export async function sendMessageToAgent({
     throw new Error('Supabase is not configured. Check your Expo environment variables.');
   }
 
-  const { data, error } = await supabase.functions.invoke<LunivoChatResponse>('lunivo-chat', {
+  const { data, error } = await supabase.functions.invoke<LunivoChatResponse>(LUNIVO_CHAT_FUNCTION_NAME, {
     body: {
       conversationId,
       modelMode,

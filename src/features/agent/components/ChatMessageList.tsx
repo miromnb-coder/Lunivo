@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ChatMessageBubble } from './ChatMessageBubble';
+import { ChatThinkingBubble } from './ChatThinkingBubble';
 
 export type ChatMessage = {
   id: string;
@@ -12,9 +13,14 @@ export type ChatMessage = {
 type ChatMessageListProps = {
   messages: ChatMessage[];
   bottomInset?: number;
+  thinking?: boolean;
 };
 
-export function ChatMessageList({ messages, bottomInset = 190 }: ChatMessageListProps) {
+export function ChatMessageList({
+  messages,
+  bottomInset = 190,
+  thinking = false,
+}: ChatMessageListProps) {
   const scrollRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
@@ -23,7 +29,7 @@ export function ChatMessageList({ messages, bottomInset = 190 }: ChatMessageList
     }, 80);
 
     return () => clearTimeout(timeoutId);
-  }, [messages.length, bottomInset]);
+  }, [messages.length, thinking, bottomInset]);
 
   return (
     <ScrollView
@@ -38,6 +44,7 @@ export function ChatMessageList({ messages, bottomInset = 190 }: ChatMessageList
         {messages.map((message) => (
           <ChatMessageBubble key={message.id} message={message} />
         ))}
+        {thinking ? <ChatThinkingBubble /> : null}
       </View>
     </ScrollView>
   );

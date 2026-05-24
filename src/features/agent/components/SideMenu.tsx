@@ -133,6 +133,13 @@ export function SideMenu({
           <MenuRow icon={PencilLine} label="New chat" onPress={onNewChat} />
         </View>
 
+        <SectionLabel>SPACES</SectionLabel>
+        <View style={styles.sectionRows}>
+          {spaceItems.map((item) => (
+            <MenuRow key={item.label} {...item} />
+          ))}
+        </View>
+
         <SectionLabel>CHATS</SectionLabel>
         <View style={styles.chatRows}>
           {conversations.length > 0 ? (
@@ -148,13 +155,6 @@ export function SideMenu({
               Your saved chats will appear here.
             </Text>
           )}
-        </View>
-
-        <SectionLabel>SPACES</SectionLabel>
-        <View style={styles.sectionRows}>
-          {spaceItems.map((item) => (
-            <MenuRow key={item.label} {...item} />
-          ))}
         </View>
       </ScrollView>
 

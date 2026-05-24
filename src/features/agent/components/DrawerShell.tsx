@@ -109,10 +109,10 @@ export function DrawerShell({ children }: DrawerShellProps) {
   }));
 
   return (
-    <View style={styles.shell}>
-      <SideMenu />
+    <GestureDetector gesture={panGesture}>
+      <View style={styles.shell}>
+        <SideMenu />
 
-      <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.mainScreen, mainScreenStyle, mainShadowStyle]}>
           {children({ closeDrawer, isDrawerOpen, openDrawer, toggleDrawer })}
 
@@ -125,8 +125,8 @@ export function DrawerShell({ children }: DrawerShellProps) {
             />
           ) : null}
         </Animated.View>
-      </GestureDetector>
-    </View>
+      </View>
+    </GestureDetector>
   );
 }
 

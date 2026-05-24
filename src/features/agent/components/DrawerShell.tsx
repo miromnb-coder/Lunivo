@@ -3,12 +3,11 @@ import { useCallback, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Extrapolation,
-  interpolate,
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { agentTheme } from '../constants/agentTheme';
@@ -25,10 +24,33 @@ type DrawerShellProps = {
   children: (controls: DrawerControls) => ReactNode;
 };
 
-const OPEN_SPRING = {
-  damping: 30,
-  mass: 0.9,
-  stiffness: 176,
+const DRAG_ACTIVATION_DISTANCE = 8;
+const HORIZONTAL_DOMINANCE = 1.18;
+const SWIPE_VELOCITY = 720;
+const OPEN_PROGRESS_THRESHOLD = 0.38;
+const CLOSE_PROGRESS_THRESHOLD = 0.62;
+const MAIN_CARD_OPEN_RADIUS = 38;
+const MAIN_CARD_OPEN_SCALE = 0.985;
+const DRAWER_PARALLAX_OFFSET = 24;
+
+const OPEN_TIMING = {
+  duration: 330,
+  easing: Easing.out(Easing.cubic),
+};
+
+const CLOSE_TIMING = {
+  duration: 255,
+  easing: Easing.out(Easing.cubic),
+};
+
+const SETTLE_OPEN_TIMING = {
+  duration: 235,
+  easing: Easing.out(Easing.cubic),
+};
+
+const SETTLE_CLOSE_TIMING = {
+  duration: 205,
+  easing: Easing.out(Easing.cubic),
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -51,11 +73,11 @@ export function DrawerShell({ children }: DrawerShellProps) {
   const openDrawer = useCallback(() => {
     Keyboard.dismiss();
     setIsDrawerOpen(true);
-    progress.value = withSpring(1, OPEN_SPRING);
+    progress.value = withTiming(1, OPEN_TIMING);
   }, [progress]);
 
   const closeDrawer = useCallback(() => {
-    progress.value = withSpring(0, OPEN_SPRING, (finished) => {
+    progress.value = withTiming(0, CLOSE_TIMING, (finished) => {
       if (finished) {
         runOnJS(setOpenState)(false);
       }
@@ -72,12 +94,18 @@ export function DrawerShell({ children }: DrawerShellProps) {
   }, [closeDrawer, isDrawerOpen, openDrawer]);
 
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-14, 14])
+    .activeOffsetX([-DRAG_ACTIVATION_DISTANCE, DRAG_ACTIVATION_DISTANCE])
+    .failOffsetY([-28, 28])
     .onStart(() => {
       gestureStartProgress.value = progress.value;
     })
     .onUpdate((event) => {
+      const isMostlyHorizontal = Math.abs(event.translationX) > Math.abs(event.translationY) * HORIZONTAL_DOMINANCE;
+
+      if (!isMostlyHorizontal) {
+        return;
+      }
+
       const nextProgress = gestureStartProgress.value + event.translationX / openDistance;
       progress.value = clamp(nextProgress, 0, 1);
 
@@ -86,36 +114,55 @@ export function DrawerShell({ children }: DrawerShellProps) {
       }
     })
     .onEnd((event) => {
-      const shouldOpen = event.velocityX > 650 || (event.velocityX > -650 && progress.value > 0.42);
-      progress.value = withSpring(shouldOpen ? 1 : 0, OPEN_SPRING, (finished) => {
+      const shouldOpen = event.velocityX > SWIPE_VELOCITY || (event.velocityX > -SWIPE_VELOCITY && progress.value > OPEN_PROGRESS_THRESHOLD);
+      const shouldClose = event.velocityX < -SWIPE_VELOCITY || (event.velocityX < SWIPE_VELOCITY && progress.value < CLOSE_PROGRESS_THRESHOLD);
+      const nextOpen = progress.value > 0.5 ? !shouldClose : shouldOpen;
+
+      progress.value = withTiming(nextOpen ? 1 : 0, nextOpen ? SETTLE_OPEN_TIMING : SETTLE_CLOSE_TIMING, (finished) => {
         if (finished) {
-          runOnJS(setOpenState)(shouldOpen);
+          runOnJS(setOpenState)(nextOpen);
         }
       });
     });
 
-  const mainScreenStyle = useAnimatedStyle(() => {
-    const borderRadius = interpolate(progress.value, [0, 0.22, 1], [0, 42, 42], Extrapolation.CLAMP);
-    const scale = interpolate(progress.value, [0, 0.48, 1], [1, 0.955, 0.985], Extrapolation.CLAMP);
+  const drawerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 0.98 + progress.value * 0.02,
+    transform: [{ translateX: (progress.value - 1) * DRAWER_PARALLAX_OFFSET }],
+  }));
+
+  const mainCardAnimatedStyle = useAnimatedStyle(() => {
+    const scale = 1 - progress.value * (1 - MAIN_CARD_OPEN_SCALE);
 
     return {
-      borderRadius,
-      transform: [{ translateX: progress.value * openDistance }, { scale }],
+      shadowOpacity: progress.value * 0.2,
+      shadowRadius: 30 * progress.value,
+      transform: [
+        { translateX: progress.value * openDistance },
+        { scale },
+      ],
     };
   });
 
-  const mainShadowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: interpolate(progress.value, [0, 0.22, 1], [0, 0.25, 0.2], Extrapolation.CLAMP),
-    shadowRadius: interpolate(progress.value, [0, 0.35, 1], [0, 42, 34], Extrapolation.CLAMP),
-  }));
+  const mainScreenAnimatedStyle = useAnimatedStyle(() => {
+    const radius = progress.value * MAIN_CARD_OPEN_RADIUS;
+
+    return {
+      borderTopLeftRadius: radius,
+      borderBottomLeftRadius: radius,
+    };
+  });
 
   return (
     <GestureDetector gesture={panGesture}>
       <View style={styles.shell}>
-        <SideMenu />
+        <Animated.View style={[styles.drawer, drawerAnimatedStyle]}>
+          <SideMenu />
+        </Animated.View>
 
-        <Animated.View style={[styles.mainScreen, mainScreenStyle, mainShadowStyle]}>
-          {children({ closeDrawer, isDrawerOpen, openDrawer, toggleDrawer })}
+        <Animated.View pointerEvents="box-none" style={[styles.mainCard, mainCardAnimatedStyle]}>
+          <Animated.View style={[styles.mainScreen, mainScreenAnimatedStyle]}>
+            {children({ closeDrawer, isDrawerOpen, openDrawer, toggleDrawer })}
+          </Animated.View>
 
           {isDrawerOpen ? (
             <Pressable
@@ -134,16 +181,28 @@ export function DrawerShell({ children }: DrawerShellProps) {
 const styles = StyleSheet.create({
   shell: {
     flex: 1,
+    overflow: 'hidden',
     backgroundColor: agentTheme.colors.background,
   },
-  mainScreen: {
+  drawer: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
     backgroundColor: agentTheme.colors.background,
-    overflow: 'hidden',
+  },
+  mainCard: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 30,
+    backgroundColor: 'transparent',
     shadowColor: '#000',
-    shadowOffset: { width: -22, height: 18 },
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0,
     shadowRadius: 0,
-    elevation: 18,
+    elevation: 20,
+  },
+  mainScreen: {
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: agentTheme.colors.background,
   },
   closeLayer: {
     ...StyleSheet.absoluteFillObject,

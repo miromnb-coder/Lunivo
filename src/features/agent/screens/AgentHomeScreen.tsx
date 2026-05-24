@@ -24,6 +24,7 @@ import {
   type ConversationSummary,
 } from '../services/chatHistory';
 import { sendMessageToAgent } from '../services/sendMessageToAgent';
+import { streamMessageToAgent } from '../services/streamMessageToAgent';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
@@ -52,7 +53,9 @@ export function AgentHomeScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [streamScrollKey, setStreamScrollKey] = useState(0);
   const sendRunRef = useRef(0);
+  const streamAbortControllerRef = useRef<AbortController | null>(null);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
@@ -124,17 +127,22 @@ export function AgentHomeScreen() {
 
   const handleNewChat = useCallback(() => {
     sendRunRef.current += 1;
+    streamAbortControllerRef.current?.abort();
+    streamAbortControllerRef.current = null;
     Keyboard.dismiss();
     setActiveConversationId(null);
     setMessage('');
     setMessages([]);
     setIsThinking(false);
+    setStreamScrollKey(0);
     animateHero(true, 180);
   }, [animateHero]);
 
   const handleSelectConversation = useCallback(
     async (conversationId: string) => {
       sendRunRef.current += 1;
+      streamAbortControllerRef.current?.abort();
+      streamAbortControllerRef.current = null;
       Keyboard.dismiss();
       setActiveConversationId(conversationId);
       setMessage('');
@@ -164,60 +172,112 @@ export function AgentHomeScreen() {
       return;
     }
 
+    streamAbortControllerRef.current?.abort();
+
     const userMessage: ChatMessage = {
       id: createMessageId('user'),
       role: 'user',
       content: trimmedMessage,
     };
 
+    const assistantMessageId = createMessageId('assistant');
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+    };
+
     const nextMessages = [...messages, userMessage];
     const runId = sendRunRef.current + 1;
-    sendRunRef.current = runId;
+    const abortController = new AbortController();
+    let streamedAnswer = '';
 
-    setMessages(nextMessages);
+    sendRunRef.current = runId;
+    streamAbortControllerRef.current = abortController;
+
+    setMessages([...nextMessages, assistantMessage]);
     setMessage('');
     setIsThinking(true);
+    setStreamScrollKey((currentKey) => currentKey + 1);
     animateHero(false, 160);
 
     try {
-      const { answer, conversationId } = await sendMessageToAgent({
+      await streamMessageToAgent({
         conversationId: activeConversationId,
         messages: nextMessages,
-        modelMode: 'auto',
+        signal: abortController.signal,
+        onDelta: (delta) => {
+          if (sendRunRef.current !== runId) {
+            return;
+          }
+
+          streamedAnswer += delta;
+          setIsThinking(false);
+          setMessages((currentMessages) =>
+            currentMessages.map((currentMessage) =>
+              currentMessage.id === assistantMessageId
+                ? { ...currentMessage, content: `${currentMessage.content}${delta}` }
+                : currentMessage,
+            ),
+          );
+          setStreamScrollKey((currentKey) => currentKey + 1);
+        },
       });
 
       if (sendRunRef.current !== runId) {
         return;
       }
 
-      if (conversationId) {
-        setActiveConversationId(conversationId);
+      if (!streamedAnswer.trim()) {
+        throw new Error('Lunivo stream returned an empty answer.');
       }
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: createMessageId('assistant'),
-          role: 'assistant',
-          content: answer,
-        },
-      ]);
       loadMenuData();
-    } catch (error) {
-      if (sendRunRef.current !== runId) {
+    } catch (streamError) {
+      if (sendRunRef.current !== runId || abortController.signal.aborted) {
         return;
       }
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: createMessageId('assistant'),
-          role: 'assistant',
-          content: createAgentErrorMessage(error),
-        },
-      ]);
+      try {
+        const { answer, conversationId } = await sendMessageToAgent({
+          conversationId: activeConversationId,
+          messages: nextMessages,
+          modelMode: 'fast',
+        });
+
+        if (sendRunRef.current !== runId) {
+          return;
+        }
+
+        if (conversationId) {
+          setActiveConversationId(conversationId);
+        }
+
+        setMessages((currentMessages) =>
+          currentMessages.map((currentMessage) =>
+            currentMessage.id === assistantMessageId
+              ? { ...currentMessage, content: answer }
+              : currentMessage,
+          ),
+        );
+        setStreamScrollKey((currentKey) => currentKey + 1);
+        loadMenuData();
+      } catch (fallbackError) {
+        if (sendRunRef.current !== runId) {
+          return;
+        }
+
+        setMessages((currentMessages) =>
+          currentMessages.map((currentMessage) =>
+            currentMessage.id === assistantMessageId
+              ? { ...currentMessage, content: createAgentErrorMessage(fallbackError) }
+              : currentMessage,
+          ),
+        );
+      }
     } finally {
       if (sendRunRef.current === runId) {
+        streamAbortControllerRef.current = null;
         setIsThinking(false);
       }
     }
@@ -230,6 +290,7 @@ export function AgentHomeScreen() {
   useEffect(() => {
     return () => {
       sendRunRef.current += 1;
+      streamAbortControllerRef.current?.abort();
     };
   }, []);
 
@@ -294,6 +355,7 @@ export function AgentHomeScreen() {
               <ChatMessageList
                 messages={messages}
                 bottomInset={messageListBottomInset}
+                scrollKey={streamScrollKey}
                 thinking={isThinking}
                 topInset={MESSAGE_LIST_TOP_INSET}
               />

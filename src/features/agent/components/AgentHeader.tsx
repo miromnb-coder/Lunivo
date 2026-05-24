@@ -24,7 +24,7 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
 
       <View style={styles.rightSide}>
         <View style={styles.pointsPill}>
-          <Ionicons name="sparkles-outline" size={25} color={agentTheme.colors.text} />
+          <Ionicons name="sparkles-outline" size={23} color={agentTheme.colors.text} />
           <Text allowFontScaling={false} style={styles.points}>
             {points}
           </Text>
@@ -37,7 +37,7 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
 const styles = StyleSheet.create({
   header: {
     width: '100%',
-    height: 68,
+    height: 66,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -45,32 +45,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 92,
-    height: 68,
+    width: 84,
+    height: 66,
     justifyContent: 'center',
     alignItems: 'flex-start',
     zIndex: 2,
   },
   menuIcon: {
-    height: 28,
+    height: 25,
     justifyContent: 'center',
-    gap: 9,
+    gap: 8,
   },
   menuLine: {
-    width: 31,
+    width: 29,
     height: 4,
     borderRadius: 999,
     backgroundColor: '#3f4654',
   },
   menuLineShort: {
-    width: 25,
+    width: 23,
   },
   rightSide: {
     position: 'absolute',
     right: 0,
     top: 0,
-    width: 126,
-    height: 68,
+    width: 118,
+    height: 66,
     justifyContent: 'center',
     alignItems: 'flex-end',
     zIndex: 2,
@@ -78,28 +78,28 @@ const styles = StyleSheet.create({
   appName: {
     width: '100%',
     textAlign: 'center',
-    fontSize: 34,
-    lineHeight: 42,
+    fontSize: 31,
+    lineHeight: 39,
     fontWeight: '400',
     color: agentTheme.colors.text,
     fontFamily: 'Georgia',
     zIndex: 1,
   },
   pointsPill: {
-    width: 108,
-    height: 48,
+    width: 104,
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 7,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: agentTheme.colors.border,
     backgroundColor: 'rgba(255, 255, 255, 0.72)',
   },
   points: {
-    fontSize: 25,
-    lineHeight: 31,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '800',
     color: agentTheme.colors.text,
   },

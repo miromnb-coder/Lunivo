@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { agentTheme } from '../../agent/constants/agentTheme';
 
@@ -9,8 +10,28 @@ type LunivoWelcomeScreenProps = {
   onEmailContinue: () => void;
 };
 
-const GOOGLE_ICON_URI =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABmJLR0QA/wD/AP+gvaeTAAAJJElEQVR4nO2be1BU1x3Hv+fevcsuu8trEQW0gkhRUATi+9HEqonWJHbsqDO1akwzmUYnJtaoRM24xprxgYljfYQZUztpbByNNTFKpDHiI5pMFCL4QFFRUEAerrzZx733Pk9y9l3vgkLbu7suRKC85J3z7znnP+f3fd9n5/u8Z+65x2pJkiRJkiRJkiRJkiRJkiRJkiRJkiT9b0F3jKQA3oC7QDXgJfAo8AhQBOgE3AB+DfwM+AjYCLgGJAB7gE9AbeAZcAvYBdYDlwCvgRPAB+BfwAXgPyAI/AEsAGcBXwBNgB3AUsA84AtwGTgI/A2uAi8BG4H9gLrAWGAo8Bt4CZwAJwGrgHPAg8A9YB6wF3gUuAX8At4F3gT+E8o/6v4B3wNOAGcBz4CrwGfA08DnwEPgT8Bf4K7wKfA++BT4EvgMeBu4C7wIjABuA+8CXwJPADcDEwDNgPnApuAO8AWwCzgTnAHuA64C7wNnApeBf4GvAPcB44DFwBTgHnAWuBT8A3wP/A58Bf4BfgK8Bf4DvgE+Bf4G/gX+Cf8Jf4B/gb+BP8J/4R/gz/BH+GP8Bf4M/wt/hT/D3+Af8M/wt/hX/Dv+Ff8O/4d/w7/h3/Dv+Hf8O/4d/w7/h3/Dv+Hf8O/4d/w7/h3/Dv+Hf8O/4d/w7/h3/Dv+Hf8O/4d/w7/h3DP8H/AL+WywU6Rr5TAAAAAElFTkSuQmCC';
+function GoogleIcon() {
+  return (
+    <Svg width={28} height={28} viewBox="0 0 48 48">
+      <Path
+        fill="#FFC107"
+        d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+      />
+      <Path
+        fill="#FF3D00"
+        d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+      />
+      <Path
+        fill="#4CAF50"
+        d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+      />
+      <Path
+        fill="#1976D2"
+        d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+      />
+    </Svg>
+  );
+}
 
 export function LunivoWelcomeScreen({ onContinue, onEmailContinue }: LunivoWelcomeScreenProps) {
   return (
@@ -31,7 +52,7 @@ export function LunivoWelcomeScreen({ onContinue, onEmailContinue }: LunivoWelco
           </Pressable>
 
           <Pressable onPress={onContinue} style={({ pressed }) => [styles.lightButton, pressed && styles.pressed]}>
-            <Image source={{ uri: GOOGLE_ICON_URI }} style={styles.googleIcon} />
+            <GoogleIcon />
             <Text allowFontScaling={false} style={styles.lightButtonText}>Continue with Google</Text>
           </Pressable>
 
@@ -164,11 +185,6 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     fontWeight: '500',
     letterSpacing: -0.2,
-  },
-  googleIcon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
   },
   loginRow: {
     marginTop: 22,

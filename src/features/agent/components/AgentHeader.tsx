@@ -8,16 +8,18 @@ const MENU_ICON_COLOR = 'rgba(17,24,39,0.78)';
 
 type AgentHeaderProps = {
   appName: string;
+  onMenuPress?: () => void;
   points: number;
 };
 
-export function AgentHeader({ appName, points }: AgentHeaderProps) {
+export function AgentHeader({ appName, onMenuPress, points }: AgentHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable
         accessibilityLabel="Open menu"
         accessibilityRole="button"
         hitSlop={{ top: 18, right: 22, bottom: 18, left: 14 }}
+        onPress={onMenuPress}
         style={({ pressed }) => [styles.menuButton, pressed && styles.buttonPressed]}
       >
         <View style={styles.menuIcon}>

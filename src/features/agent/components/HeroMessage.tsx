@@ -18,7 +18,7 @@ export function HeroMessage() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginTop: 174,
+    marginTop: 118,
   },
   title: {
     width: 360,

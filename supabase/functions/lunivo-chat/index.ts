@@ -26,7 +26,7 @@ const SMART_MODEL = "gpt-5-mini";
 const MAX_MESSAGES = 16;
 const MAX_MESSAGE_CHARS = 4_000;
 const MAX_TITLE_CHARS = 54;
-const MAX_OUTPUT_TOKENS = 900;
+const MAX_OUTPUT_TOKENS = 2_000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,8 +45,6 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 function selectModel(modelMode: ModelMode = "auto") {
-  // Keep costs low: auto and fast always use nano.
-  // Use mini only when the app explicitly asks for smart mode later.
   if (modelMode === "smart") {
     return SMART_MODEL;
   }
@@ -91,30 +89,45 @@ function getLatestUserMessage(messages: NormalizedMessage[]) {
   return [...messages].reverse().find((message) => message.role === "user") ?? null;
 }
 
-function extractOutputText(data: unknown) {
-  if (typeof data !== "object" || data === null) {
+function extractText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(extractText).filter(Boolean).join("\n").trim();
+  }
+
+  if (typeof value !== "object" || value === null) {
     return "";
   }
 
-  const response = data as {
-    output_text?: unknown;
-    output?: Array<{
-      content?: Array<{
-        text?: unknown;
-        type?: unknown;
-      }>;
-    }>;
-  };
+  const object = value as Record<string, unknown>;
 
-  if (typeof response.output_text === "string") {
-    return response.output_text.trim();
+  if (typeof object.output_text === "string") {
+    return object.output_text.trim();
   }
 
-  return (response.output ?? [])
-    .flatMap((item) => item.content ?? [])
-    .map((content) => (typeof content.text === "string" ? content.text : ""))
-    .join("")
-    .trim();
+  if (typeof object.text === "string") {
+    return object.text.trim();
+  }
+
+  const contentText = extractText(object.content);
+  if (contentText) {
+    return contentText;
+  }
+
+  const outputText = extractText(object.output);
+  if (outputText) {
+    return outputText;
+  }
+
+  const messageText = extractText(object.message);
+  if (messageText) {
+    return messageText;
+  }
+
+  return "";
 }
 
 function getOpenAIError(data: unknown) {
@@ -141,6 +154,42 @@ function getEnv() {
     supabaseUrl,
     supabaseAnonKey,
     supabaseServiceRoleKey,
+  };
+}
+
+async function callOpenAI({
+  input,
+  instructions,
+  model,
+  openAIKey,
+}: {
+  input: NormalizedMessage[];
+  instructions: string;
+  model: string;
+  openAIKey: string;
+}) {
+  const response = await fetch(OPENAI_RESPONSES_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${openAIKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      instructions,
+      input,
+      max_output_tokens: MAX_OUTPUT_TOKENS,
+      store: false,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  return {
+    data,
+    ok: response.ok,
+    status: response.status,
+    text: extractText(data).trim(),
   };
 }
 
@@ -309,43 +358,58 @@ Deno.serve(async (req: Request) => {
   ].join("\n");
 
   try {
-    const openAIResponse = await fetch(OPENAI_RESPONSES_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openAIKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        instructions,
-        input: messages,
-        max_output_tokens: MAX_OUTPUT_TOKENS,
-        store: false,
-      }),
+    let openAIResult = await callOpenAI({
+      input: messages,
+      instructions,
+      model,
+      openAIKey,
     });
 
-    const data = await openAIResponse.json().catch(() => ({}));
-
-    if (!openAIResponse.ok) {
+    if (!openAIResult.ok) {
       return jsonResponse(
         {
           error: "OpenAI request failed",
-          detail: getOpenAIError(data),
+          detail: getOpenAIError(openAIResult.data),
           conversationId: savedConversationId,
           model,
           modelMode,
           persistenceError,
         },
-        openAIResponse.status,
+        openAIResult.status,
       );
     }
 
-    const answer = extractOutputText(data);
+    if (!openAIResult.text && model !== SMART_MODEL) {
+      openAIResult = await callOpenAI({
+        input: messages,
+        instructions,
+        model: SMART_MODEL,
+        openAIKey,
+      });
+    }
+
+    if (!openAIResult.ok) {
+      return jsonResponse(
+        {
+          error: "OpenAI retry failed",
+          detail: getOpenAIError(openAIResult.data),
+          conversationId: savedConversationId,
+          model: SMART_MODEL,
+          modelMode,
+          persistenceError,
+        },
+        openAIResult.status,
+      );
+    }
+
+    const answer = openAIResult.text;
 
     if (!answer) {
+      console.log("Empty OpenAI response", JSON.stringify(openAIResult.data).slice(0, 1800));
       return jsonResponse(
         {
           error: "Empty AI answer",
+          detail: "OpenAI returned a response, but Lunivo could not extract readable text from it.",
           conversationId: savedConversationId,
           model,
           modelMode,
@@ -361,7 +425,7 @@ Deno.serve(async (req: Request) => {
         user_id: userData.user.id,
         role: "assistant",
         content: answer,
-        model,
+        model: openAIResult.text ? model : SMART_MODEL,
       });
 
       if (error) {

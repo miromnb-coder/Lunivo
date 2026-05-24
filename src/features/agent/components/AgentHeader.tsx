@@ -1,3 +1,4 @@
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
@@ -10,16 +11,21 @@ type AgentHeaderProps = {
 export function AgentHeader({ appName, points }: AgentHeaderProps) {
   return (
     <View style={styles.header}>
-      <View style={styles.menuButton}>
-        <View style={styles.menuLine} />
-        <View style={[styles.menuLine, styles.menuLineShort]} />
+      <View style={styles.headerSide}>
+        <Feather name="menu" size={31} color="#3f4654" />
       </View>
 
-      <Text style={styles.appName}>{appName}</Text>
+      <Text allowFontScaling={false} style={styles.appName}>
+        {appName}
+      </Text>
 
-      <View style={styles.pointsPill}>
-        <Text style={styles.sparkle}>✧</Text>
-        <Text style={styles.points}>{points}</Text>
+      <View style={[styles.headerSide, styles.rightSide]}>
+        <View style={styles.pointsPill}>
+          <Ionicons name="sparkles-outline" size={29} color={agentTheme.colors.text} />
+          <Text allowFontScaling={false} style={styles.points}>
+            {points}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -28,56 +34,43 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
 const styles = StyleSheet.create({
   header: {
     width: '100%',
-    minHeight: 70,
+    height: 72,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  menuButton: {
-    width: 54,
-    height: 48,
+  headerSide: {
+    width: 128,
+    height: 72,
     justifyContent: 'center',
-    gap: 9,
   },
-  menuLine: {
-    width: 31,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: '#3f4654',
-  },
-  menuLineShort: {
-    width: 25,
+  rightSide: {
+    alignItems: 'flex-end',
   },
   appName: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+    flex: 1,
     textAlign: 'center',
-    fontSize: 42,
-    lineHeight: 50,
+    fontSize: 38,
+    lineHeight: 46,
     fontWeight: '500',
     color: agentTheme.colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'Georgia',
   },
   pointsPill: {
-    minWidth: 118,
+    width: 116,
     height: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 9,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: agentTheme.colors.border,
     backgroundColor: 'rgba(255, 255, 255, 0.72)',
   },
-  sparkle: {
-    fontSize: 34,
-    lineHeight: 36,
-    color: agentTheme.colors.text,
-  },
   points: {
-    fontSize: 29,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '800',
     color: agentTheme.colors.text,
   },

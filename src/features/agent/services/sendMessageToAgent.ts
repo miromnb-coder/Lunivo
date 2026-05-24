@@ -5,6 +5,7 @@ type AgentModelMode = 'auto' | 'fast' | 'smart';
 
 type LunivoChatResponse = {
   answer?: string;
+  conversationId?: string;
   error?: string;
   detail?: string;
   model?: string;
@@ -13,11 +14,13 @@ type LunivoChatResponse = {
 };
 
 type SendMessageToAgentInput = {
+  conversationId?: string | null;
   messages: ChatMessage[];
   modelMode?: AgentModelMode;
 };
 
 export async function sendMessageToAgent({
+  conversationId,
   messages,
   modelMode = 'auto',
 }: SendMessageToAgentInput) {
@@ -27,6 +30,7 @@ export async function sendMessageToAgent({
 
   const { data, error } = await supabase.functions.invoke<LunivoChatResponse>('lunivo-chat', {
     body: {
+      conversationId,
       modelMode,
       messages: messages.map((message) => ({
         role: message.role,
@@ -51,6 +55,7 @@ export async function sendMessageToAgent({
 
   return {
     answer,
+    conversationId: data?.conversationId,
     model: data?.model,
     modelMode: data?.modelMode,
     provider: data?.provider,

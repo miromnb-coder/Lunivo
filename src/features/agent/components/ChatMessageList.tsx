@@ -31,7 +31,15 @@ export function ChatMessageList({
     }, 80);
 
     return () => clearTimeout(timeoutId);
-  }, [messages.length, thinking, bottomInset, topInset]);
+  }, [messages.length, thinking]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }, 32);
+
+    return () => clearTimeout(timeoutId);
+  }, [bottomInset, topInset]);
 
   return (
     <ScrollView

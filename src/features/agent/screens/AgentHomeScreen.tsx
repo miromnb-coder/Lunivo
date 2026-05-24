@@ -18,8 +18,10 @@ import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
-const KEYBOARD_GAP = 34;
-const MESSAGE_LIST_BOTTOM_GAP = 24;
+const KEYBOARD_GAP = 8;
+const MESSAGE_LIST_BOTTOM_GAP = 14;
+const KEYBOARD_MESSAGE_TOP_INSET = 132;
+const CLOSED_MESSAGE_TOP_INSET = 28;
 const TEMPORARY_RESPONSE_DELAY_MS = 900;
 
 export function AgentHomeScreen() {
@@ -39,6 +41,7 @@ export function AgentHomeScreen() {
     () => composerHeight + composerBottomInset + MESSAGE_LIST_BOTTOM_GAP,
     [composerBottomInset, composerHeight],
   );
+  const messageListTopInset = keyboardOpen ? KEYBOARD_MESSAGE_TOP_INSET : CLOSED_MESSAGE_TOP_INSET;
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -186,6 +189,7 @@ export function AgentHomeScreen() {
             messages={messages}
             bottomInset={messageListBottomInset}
             thinking={isThinking}
+            topInset={messageListTopInset}
           />
         ) : null}
 

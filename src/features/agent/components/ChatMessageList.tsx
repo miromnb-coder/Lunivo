@@ -14,12 +14,14 @@ type ChatMessageListProps = {
   messages: ChatMessage[];
   bottomInset?: number;
   thinking?: boolean;
+  topInset?: number;
 };
 
 export function ChatMessageList({
   messages,
   bottomInset = 190,
   thinking = false,
+  topInset = 28,
 }: ChatMessageListProps) {
   const scrollRef = useRef<ScrollView | null>(null);
 
@@ -29,12 +31,18 @@ export function ChatMessageList({
     }, 80);
 
     return () => clearTimeout(timeoutId);
-  }, [messages.length, thinking, bottomInset]);
+  }, [messages.length, thinking, bottomInset, topInset]);
 
   return (
     <ScrollView
       ref={scrollRef}
-      contentContainerStyle={[styles.content, { paddingBottom: bottomInset }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingBottom: bottomInset,
+          paddingTop: topInset,
+        },
+      ]}
       keyboardDismissMode="none"
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -59,7 +67,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: 18,
-    paddingTop: 28,
   },
   messagesStack: {
     width: '100%',

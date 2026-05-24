@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
@@ -12,10 +12,13 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.leftSide}>
-        <Feather name="menu" size={29} color="#3f4654" />
+        <View style={styles.menuIcon}>
+          <View style={styles.menuLine} />
+          <View style={[styles.menuLine, styles.menuLineShort]} />
+        </View>
       </View>
 
-      <Text allowFontScaling={false} numberOfLines={1} style={styles.appName}>
+      <Text allowFontScaling={false} style={styles.appName}>
         {appName}
       </Text>
 
@@ -35,32 +38,52 @@ const styles = StyleSheet.create({
   header: {
     width: '100%',
     height: 68,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
   leftSide: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
     width: 92,
     height: 68,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    zIndex: 2,
+  },
+  menuIcon: {
+    height: 28,
+    justifyContent: 'center',
+    gap: 9,
+  },
+  menuLine: {
+    width: 31,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#3f4654',
+  },
+  menuLineShort: {
+    width: 25,
   },
   rightSide: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
     width: 126,
     height: 68,
     justifyContent: 'center',
     alignItems: 'flex-end',
+    zIndex: 2,
   },
   appName: {
-    position: 'absolute',
-    left: 118,
-    right: 142,
+    width: '100%',
     textAlign: 'center',
     fontSize: 34,
     lineHeight: 42,
     fontWeight: '400',
     color: agentTheme.colors.text,
     fontFamily: 'Georgia',
+    zIndex: 1,
   },
   pointsPill: {
     width: 108,

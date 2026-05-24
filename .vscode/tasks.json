@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Expo",
+      "type": "npm",
+      "script": "start",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Expo clear cache",
+      "type": "npm",
+      "script": "start:clear",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Expo tunnel",
+      "type": "npm",
+      "script": "start:tunnel",
+      "problemMatcher": []
+    },
+    {
+      "label": "TypeScript check",
+      "type": "npm",
+      "script": "typecheck",
+      "problemMatcher": []
+    }
+  ]
+}

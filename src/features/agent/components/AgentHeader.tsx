@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
@@ -7,6 +6,19 @@ type AgentHeaderProps = {
   appName: string;
   points: number;
 };
+
+function PointsSparkleIcon() {
+  return (
+    <View style={styles.sparkleIcon}>
+      <Text allowFontScaling={false} style={styles.sparkleSymbol}>
+        ✧
+      </Text>
+      <Text allowFontScaling={false} style={styles.sparklePlus}>
+        +
+      </Text>
+    </View>
+  );
+}
 
 export function AgentHeader({ appName, points }: AgentHeaderProps) {
   return (
@@ -24,7 +36,7 @@ export function AgentHeader({ appName, points }: AgentHeaderProps) {
 
       <View style={styles.rightSide}>
         <View style={styles.pointsPill}>
-          <Ionicons name="sparkles-outline" size={23} color={agentTheme.colors.text} />
+          <PointsSparkleIcon />
           <Text allowFontScaling={false} style={styles.points}>
             {points}
           </Text>
@@ -69,7 +81,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 0,
-    width: 118,
+    width: 112,
     height: 66,
     justifyContent: 'center',
     alignItems: 'flex-end',
@@ -86,20 +98,42 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   pointsPill: {
-    width: 104,
-    height: 46,
+    width: 96,
+    height: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: agentTheme.colors.border,
+    borderColor: '#e4e4e8',
     backgroundColor: 'rgba(255, 255, 255, 0.72)',
   },
-  points: {
-    fontSize: 24,
+  sparkleIcon: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sparkleSymbol: {
+    marginTop: -2,
+    fontSize: 28,
     lineHeight: 30,
+    fontWeight: '400',
+    color: agentTheme.colors.text,
+  },
+  sparklePlus: {
+    position: 'absolute',
+    right: 0,
+    top: -1,
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '800',
+    color: agentTheme.colors.text,
+  },
+  points: {
+    fontSize: 23,
+    lineHeight: 29,
     fontWeight: '800',
     color: agentTheme.colors.text,
   },

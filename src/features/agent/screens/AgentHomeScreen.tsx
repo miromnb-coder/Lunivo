@@ -28,7 +28,7 @@ import { sendMessageToAgent } from '../services/sendMessageToAgent';
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
 const CLOSED_MESSAGE_BOTTOM_GAP = 260;
-const KEYBOARD_MESSAGE_BOTTOM_GAP = 96;
+const KEYBOARD_MESSAGE_BOTTOM_GAP = 34;
 const MESSAGE_LIST_TOP_INSET = 28;
 const DEFAULT_COMPOSER_HEIGHT = 66;
 
@@ -47,6 +47,7 @@ export function AgentHomeScreen() {
   const [avatarInitials, setAvatarInitials] = useState('MS');
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
@@ -58,7 +59,7 @@ export function AgentHomeScreen() {
 
   const hasMessages = messages.length > 0 || isThinking;
   const messageListBottomInset = keyboardOpen
-    ? composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
+    ? keyboardHeight + KEYBOARD_GAP + composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
     : CLOSED_MESSAGE_BOTTOM_GAP;
 
   const loadMenuData = useCallback(async () => {
@@ -98,6 +99,7 @@ export function AgentHomeScreen() {
   const closeComposerPosition = useCallback(
     (duration = 220) => {
       setKeyboardOpen(false);
+      setKeyboardHeight(0);
 
       Animated.timing(composerBottom, {
         toValue: CLOSED_COMPOSER_BOTTOM,
@@ -231,8 +233,10 @@ export function AgentHomeScreen() {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
+      const nextKeyboardHeight = event.endCoordinates.height;
       setKeyboardOpen(true);
-      const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, event.endCoordinates.height + KEYBOARD_GAP);
+      setKeyboardHeight(nextKeyboardHeight);
+      const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, nextKeyboardHeight + KEYBOARD_GAP);
 
       Animated.timing(composerBottom, {
         toValue: nextBottom,

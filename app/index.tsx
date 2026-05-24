@@ -1,6 +1,6 @@
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
-import { hasSupabaseConfig } from '@/lib/supabase';
+import { hasSupabaseConfig } from '../src/lib/supabase';
 
 export default function HomeScreen() {
   return (

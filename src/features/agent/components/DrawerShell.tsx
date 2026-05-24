@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { agentTheme } from '../constants/agentTheme';
+import type { ConversationSummary } from '../services/chatHistory';
 import { SideMenu } from './SideMenu';
 
 type DrawerControls = {
@@ -21,7 +22,11 @@ type DrawerControls = {
 };
 
 type DrawerShellProps = {
+  avatarInitials: string;
   children: (controls: DrawerControls) => ReactNode;
+  conversations: ConversationSummary[];
+  onNewChat: () => void;
+  onSelectConversation: (conversationId: string) => void;
 };
 
 const DRAG_ACTIVATION_DISTANCE = 8;
@@ -59,7 +64,13 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-export function DrawerShell({ children }: DrawerShellProps) {
+export function DrawerShell({
+  avatarInitials,
+  children,
+  conversations,
+  onNewChat,
+  onSelectConversation,
+}: DrawerShellProps) {
   const { width } = useWindowDimensions();
   const openDistance = width;
   const progress = useSharedValue(0);
@@ -92,6 +103,19 @@ export function DrawerShell({ children }: DrawerShellProps) {
 
     openDrawer();
   }, [closeDrawer, isDrawerOpen, openDrawer]);
+
+  const handleNewChat = useCallback(() => {
+    onNewChat();
+    closeDrawer();
+  }, [closeDrawer, onNewChat]);
+
+  const handleSelectConversation = useCallback(
+    (conversationId: string) => {
+      onSelectConversation(conversationId);
+      closeDrawer();
+    },
+    [closeDrawer, onSelectConversation],
+  );
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-DRAG_ACTIVATION_DISTANCE, DRAG_ACTIVATION_DISTANCE])
@@ -156,7 +180,12 @@ export function DrawerShell({ children }: DrawerShellProps) {
     <GestureDetector gesture={panGesture}>
       <View style={styles.shell}>
         <Animated.View style={[styles.drawer, drawerAnimatedStyle]}>
-          <SideMenu />
+          <SideMenu
+            avatarInitials={avatarInitials}
+            conversations={conversations}
+            onNewChat={handleNewChat}
+            onSelectConversation={handleSelectConversation}
+          />
         </Animated.View>
 
         <Animated.View pointerEvents="box-none" style={[styles.mainCard, mainCardAnimatedStyle]}>

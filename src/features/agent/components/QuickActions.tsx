@@ -3,14 +3,14 @@ import { StyleSheet, View } from 'react-native';
 import { QuickActionButton } from './QuickActionButton';
 
 const quickActions = [
-  { iconName: 'book-open', label: 'Explain' },
-  { iconName: 'help-circle', label: 'Quiz me' },
-  { iconName: 'calendar', label: 'Study plan' },
+  { iconName: 'book-outline', label: 'Explain' },
+  { iconName: 'help-circle-outline', label: 'Quiz me' },
+  { iconName: 'calendar-outline', label: 'Study plan' },
 ] as const;
 
 export function QuickActions() {
   return (
-    <View style={styles.row}>
+    <View style={styles.container}>
       {quickActions.map((action) => (
         <QuickActionButton key={action.label} iconName={action.iconName} label={action.label} />
       ))}
@@ -19,11 +19,12 @@ export function QuickActions() {
 }
 
 const styles = StyleSheet.create({
-  row: {
+  container: {
     width: '100%',
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    marginTop: 54,
+    gap: 10,
+    marginTop: 42,
   },
 });

@@ -8,7 +8,7 @@ export function ChatInputBar() {
     <View style={styles.wrapper}>
       <View style={styles.inputBar}>
         <View style={styles.plusButton}>
-          <Feather name="plus" size={35} color="#3b3e48" />
+          <Feather name="plus" size={32} color="#3b3e48" />
         </View>
         <Text allowFontScaling={false} numberOfLines={1} style={styles.placeholder}>
           Ask anything about your studies
@@ -26,22 +26,22 @@ const styles = StyleSheet.create({
     bottom: 36,
   },
   inputBar: {
-    height: 76,
+    height: 72,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 999,
     backgroundColor: agentTheme.colors.surface,
-    paddingLeft: 14,
-    paddingRight: 24,
+    paddingLeft: 13,
+    paddingRight: 20,
     shadowColor: agentTheme.colors.shadow,
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
     elevation: 7,
   },
   plusButton: {
-    width: 58,
-    height: 58,
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
@@ -51,9 +51,9 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
-    marginLeft: 22,
-    fontSize: 19,
-    lineHeight: 25,
+    marginLeft: 20,
+    fontSize: 17,
+    lineHeight: 23,
     fontWeight: '500',
     color: '#a6a7af',
   },

@@ -39,7 +39,7 @@ function clamp(value: number, min: number, max: number) {
 
 export function DrawerShell({ children }: DrawerShellProps) {
   const { width } = useWindowDimensions();
-  const openDistance = Math.min(width * 0.82, width - 64);
+  const openDistance = width;
   const progress = useSharedValue(0);
   const gestureStartProgress = useSharedValue(0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);

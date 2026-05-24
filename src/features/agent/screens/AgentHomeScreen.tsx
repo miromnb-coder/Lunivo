@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -12,31 +12,50 @@ import {
 
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
+import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList';
 import { HeroMessage } from '../components/HeroMessage';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
 
 const CLOSED_COMPOSER_BOTTOM = 44;
 const KEYBOARD_GAP = 18;
+const MESSAGE_LIST_BOTTOM_GAP = 24;
 
 export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [composerHeight, setComposerHeight] = useState(72);
+  const [composerBottomInset, setComposerBottomInset] = useState(CLOSED_COMPOSER_BOTTOM);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
+
+  const hasMessages = messages.length > 0;
+  const messageListBottomInset = useMemo(
+    () => composerHeight + composerBottomInset + MESSAGE_LIST_BOTTOM_GAP,
+    [composerBottomInset, composerHeight],
+  );
 
   function dismissComposer() {
     Keyboard.dismiss();
   }
 
   function handleSend() {
-    if (!message.trim()) {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage) {
       return;
     }
 
-    console.log('Send message:', message.trim());
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `${Date.now()}`,
+        role: 'user',
+        content: trimmedMessage,
+      },
+    ]);
     setMessage('');
   }
 
@@ -47,6 +66,7 @@ export function AgentHomeScreen() {
     const showSub = Keyboard.addListener(showEvent, (event) => {
       setKeyboardOpen(true);
       const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, event.endCoordinates.height + KEYBOARD_GAP);
+      setComposerBottomInset(nextBottom);
 
       Animated.parallel([
         Animated.timing(composerBottom, {
@@ -72,6 +92,7 @@ export function AgentHomeScreen() {
 
     const hideSub = Keyboard.addListener(hideEvent, (event) => {
       setKeyboardOpen(false);
+      setComposerBottomInset(CLOSED_COMPOSER_BOTTOM);
       Animated.parallel([
         Animated.timing(composerBottom, {
           toValue: CLOSED_COMPOSER_BOTTOM,
@@ -80,13 +101,13 @@ export function AgentHomeScreen() {
           useNativeDriver: false,
         }),
         Animated.timing(heroOpacity, {
-          toValue: 1,
+          toValue: hasMessages ? 0 : 1,
           duration: 220,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(heroTranslateY, {
-          toValue: 0,
+          toValue: hasMessages ? -18 : 0,
           duration: 240,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
@@ -98,7 +119,28 @@ export function AgentHomeScreen() {
       showSub.remove();
       hideSub.remove();
     };
-  }, [composerBottom, heroOpacity, heroTranslateY]);
+  }, [composerBottom, hasMessages, heroOpacity, heroTranslateY]);
+
+  useEffect(() => {
+    if (keyboardOpen) {
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(heroOpacity, {
+        toValue: hasMessages ? 0 : 1,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(heroTranslateY, {
+        toValue: hasMessages ? -18 : 0,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [hasMessages, heroOpacity, heroTranslateY, keyboardOpen]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -106,10 +148,16 @@ export function AgentHomeScreen() {
 
       <View style={styles.content}>
         <AgentHeader appName="Lunivo" points={263} />
+
+        {hasMessages ? (
+          <ChatMessageList messages={messages} bottomInset={messageListBottomInset} />
+        ) : null}
+
         <Animated.View
-          pointerEvents="box-none"
+          pointerEvents={hasMessages ? 'none' : 'box-none'}
           style={[
             styles.heroContent,
+            hasMessages && styles.heroContentOverlay,
             {
               opacity: heroOpacity,
               transform: [{ translateY: heroTranslateY }],
@@ -152,6 +200,11 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     flex: 1,
+  },
+  heroContentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    paddingHorizontal: agentTheme.spacing.screen,
+    paddingTop: 66,
   },
   composerWrap: {
     position: 'absolute',

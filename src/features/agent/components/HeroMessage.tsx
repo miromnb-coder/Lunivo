@@ -18,22 +18,22 @@ export function HeroMessage() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginTop: 170,
+    marginTop: 174,
   },
   title: {
     width: 360,
     textAlign: 'center',
-    fontSize: 37,
-    lineHeight: 45,
+    fontSize: 35,
+    lineHeight: 43,
     fontWeight: '400',
     color: '#696979',
     fontFamily: 'Georgia',
   },
   subtitle: {
-    marginTop: 22,
+    marginTop: 21,
     textAlign: 'center',
-    fontSize: 18,
-    lineHeight: 27,
+    fontSize: 17,
+    lineHeight: 25,
     fontWeight: '600',
     color: agentTheme.colors.mutedText,
   },

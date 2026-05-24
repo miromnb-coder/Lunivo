@@ -6,7 +6,7 @@ export default function RootLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Lunivo',
+          headerShown: false,
         }}
       />
     </Stack>

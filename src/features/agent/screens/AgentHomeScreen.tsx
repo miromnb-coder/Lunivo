@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -37,8 +37,50 @@ export function AgentHomeScreen() {
     [composerBottomInset, composerHeight],
   );
 
+  const animateHero = useCallback(
+    (visible: boolean, duration = 220) => {
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: visible ? 1 : 0,
+          duration,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslateY, {
+          toValue: visible ? 0 : -18,
+          duration: duration + 20,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [heroOpacity, heroTranslateY],
+  );
+
+  const closeComposerPosition = useCallback(
+    (duration = 220) => {
+      setKeyboardOpen(false);
+      setComposerBottomInset(CLOSED_COMPOSER_BOTTOM);
+
+      Animated.timing(composerBottom, {
+        toValue: CLOSED_COMPOSER_BOTTOM,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+
+      animateHero(!hasMessages, duration);
+    },
+    [animateHero, composerBottom, hasMessages],
+  );
+
   function dismissComposer() {
     Keyboard.dismiss();
+    closeComposerPosition(180);
+  }
+
+  function handleComposerBlur() {
+    closeComposerPosition(180);
   }
 
   function handleSend() {
@@ -68,79 +110,38 @@ export function AgentHomeScreen() {
       const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, event.endCoordinates.height + KEYBOARD_GAP);
       setComposerBottomInset(nextBottom);
 
-      Animated.parallel([
-        Animated.timing(composerBottom, {
-          toValue: nextBottom,
-          duration: event.duration ?? 250,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(heroOpacity, {
-          toValue: 0,
-          duration: 160,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(heroTranslateY, {
-          toValue: -18,
-          duration: 220,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.timing(composerBottom, {
+        toValue: nextBottom,
+        duration: event.duration ?? 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+
+      animateHero(false, 160);
     });
 
     const hideSub = Keyboard.addListener(hideEvent, (event) => {
-      setKeyboardOpen(false);
-      setComposerBottomInset(CLOSED_COMPOSER_BOTTOM);
-      Animated.parallel([
-        Animated.timing(composerBottom, {
-          toValue: CLOSED_COMPOSER_BOTTOM,
-          duration: event.duration ?? 220,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(heroOpacity, {
-          toValue: hasMessages ? 0 : 1,
-          duration: 220,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(heroTranslateY, {
-          toValue: hasMessages ? -18 : 0,
-          duration: 240,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
+      closeComposerPosition(event.duration ?? 220);
+    });
+
+    const didHideSub = Keyboard.addListener('keyboardDidHide', () => {
+      closeComposerPosition(160);
     });
 
     return () => {
       showSub.remove();
       hideSub.remove();
+      didHideSub.remove();
     };
-  }, [composerBottom, hasMessages, heroOpacity, heroTranslateY]);
+  }, [animateHero, closeComposerPosition, composerBottom]);
 
   useEffect(() => {
     if (keyboardOpen) {
       return;
     }
 
-    Animated.parallel([
-      Animated.timing(heroOpacity, {
-        toValue: hasMessages ? 0 : 1,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(heroTranslateY, {
-        toValue: hasMessages ? -18 : 0,
-        duration: 240,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [hasMessages, heroOpacity, heroTranslateY, keyboardOpen]);
+    animateHero(!hasMessages, 220);
+  }, [animateHero, hasMessages, keyboardOpen]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -174,6 +175,7 @@ export function AgentHomeScreen() {
       >
         <ChatComposer
           value={message}
+          onBlur={handleComposerBlur}
           onChangeText={setMessage}
           onHeightChange={setComposerHeight}
           onSend={handleSend}

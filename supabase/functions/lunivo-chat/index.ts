@@ -128,66 +128,20 @@ function getOpenAIError(data: unknown) {
     : "OpenAI request failed.";
 }
 
-async function getOrCreateConversation({
-  accessToken,
-  conversationId,
-  latestUserMessage,
-  modelMode,
-  userId,
-}: {
-  accessToken: string;
-  conversationId: string | null;
-  latestUserMessage: NormalizedMessage;
-  modelMode: ModelMode;
-  userId: string;
-}) {
+function getEnv() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase environment variables are missing.");
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  });
-
-  if (conversationId) {
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("id", conversationId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    if (data?.id) {
-      return { conversationId: data.id, supabase };
-    }
-  }
-
-  const { data: conversation, error: conversationError } = await supabase
-    .from("conversations")
-    .insert({
-      user_id: userId,
-      title: createConversationTitle(latestUserMessage.content),
-      model_mode: modelMode,
-    })
-    .select("id")
-    .single();
-
-  if (conversationError) {
-    throw conversationError;
-  }
-
-  return { conversationId: conversation.id as string, supabase };
+  return {
+    supabaseUrl,
+    supabaseAnonKey,
+    supabaseServiceRoleKey,
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -238,14 +192,21 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Authentication required" }, 401);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  let env: ReturnType<typeof getEnv>;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return jsonResponse({ error: "Supabase environment variables are missing" }, 500);
+  try {
+    env = getEnv();
+  } catch (error) {
+    return jsonResponse(
+      {
+        error: "Supabase environment variables are missing",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+    );
   }
 
-  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+  const authClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -256,55 +217,95 @@ Deno.serve(async (req: Request) => {
   const { data: userData, error: userError } = await authClient.auth.getUser(accessToken);
 
   if (userError || !userData.user) {
-    return jsonResponse({ error: "Invalid user session" }, 401);
+    return jsonResponse(
+      {
+        error: "Invalid user session",
+        detail: userError?.message ?? "Could not identify the signed-in user.",
+      },
+      401,
+    );
   }
 
   const modelMode: ModelMode = body.modelMode === "smart" || body.modelMode === "fast" ? body.modelMode : "auto";
   const model = selectModel(modelMode);
   const requestedConversationId = typeof body.conversationId === "string" ? body.conversationId : null;
+  const dbClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey ?? env.supabaseAnonKey, env.supabaseServiceRoleKey
+    ? undefined
+    : {
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      });
 
-  let savedConversationId: string;
-  let supabaseForUser: ReturnType<typeof createClient>;
+  let savedConversationId: string | null = null;
+  let persistenceError: string | null = null;
 
   try {
-    const result = await getOrCreateConversation({
-      accessToken,
-      conversationId: requestedConversationId,
-      latestUserMessage,
-      modelMode,
-      userId: userData.user.id,
-    });
+    if (requestedConversationId) {
+      const { data, error } = await dbClient
+        .from("conversations")
+        .select("id")
+        .eq("id", requestedConversationId)
+        .eq("user_id", userData.user.id)
+        .maybeSingle();
 
-    savedConversationId = result.conversationId;
-    supabaseForUser = result.supabase;
+      if (error) {
+        throw error;
+      }
 
-    const { error: userMessageError } = await supabaseForUser.from("messages").insert({
-      conversation_id: savedConversationId,
-      user_id: userData.user.id,
-      role: "user",
-      content: latestUserMessage.content,
-    });
+      savedConversationId = typeof data?.id === "string" ? data.id : null;
+    }
 
-    if (userMessageError) {
-      throw userMessageError;
+    if (!savedConversationId) {
+      const { data, error } = await dbClient
+        .from("conversations")
+        .insert({
+          user_id: userData.user.id,
+          title: createConversationTitle(latestUserMessage.content),
+          model_mode: modelMode,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      savedConversationId = typeof data?.id === "string" ? data.id : null;
+    }
+
+    if (savedConversationId) {
+      const { error } = await dbClient.from("messages").insert({
+        conversation_id: savedConversationId,
+        user_id: userData.user.id,
+        role: "user",
+        content: latestUserMessage.content,
+      });
+
+      if (error) {
+        throw error;
+      }
     }
   } catch (error) {
-    return jsonResponse(
-      {
-        error: "Could not save user message",
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      500,
-    );
+    persistenceError = error instanceof Error ? error.message : String(error);
   }
 
   const instructions = [
     "You are Lunivo, a calm personal AI study agent for students.",
-    "Help the student understand school topics clearly and step by step.",
-    "Keep answers concise unless the student asks for more detail.",
-    "Use the same language as the student's latest message when clear.",
-    "Ask one helpful follow-up question only when it genuinely helps.",
-    "Be age-appropriate and do not provide unsafe instructions.",
+    "Your job is to help the student learn, not just give final answers.",
+    "Use the same language as the student's latest message when it is clear.",
+    "Start with the direct answer, then explain the idea step by step.",
+    "For school topics, use simple examples and define important terms briefly.",
+    "For math, science, and language tasks, show the reasoning in small understandable steps without overcomplicating.",
+    "When the student asks for an explanation, keep it structured and easy to follow.",
+    "When the student asks for a quiz, ask one question at a time and wait for their answer.",
+    "When the student asks for a study plan, make a realistic plan with short focused sessions and breaks.",
+    "Keep responses concise by default, but provide more detail when the student asks.",
+    "Be encouraging, clear, and age-appropriate.",
+    "Do not provide unsafe instructions, and avoid graphic or explicit details.",
+    "Ask at most one helpful follow-up question, and only when it genuinely helps the next step.",
   ].join("\n");
 
   try {
@@ -333,6 +334,7 @@ Deno.serve(async (req: Request) => {
           conversationId: savedConversationId,
           model,
           modelMode,
+          persistenceError,
         },
         openAIResponse.status,
       );
@@ -347,30 +349,24 @@ Deno.serve(async (req: Request) => {
           conversationId: savedConversationId,
           model,
           modelMode,
+          persistenceError,
         },
         502,
       );
     }
 
-    const { error: assistantMessageError } = await supabaseForUser.from("messages").insert({
-      conversation_id: savedConversationId,
-      user_id: userData.user.id,
-      role: "assistant",
-      content: answer,
-      model,
-    });
+    if (savedConversationId) {
+      const { error } = await dbClient.from("messages").insert({
+        conversation_id: savedConversationId,
+        user_id: userData.user.id,
+        role: "assistant",
+        content: answer,
+        model,
+      });
 
-    if (assistantMessageError) {
-      return jsonResponse(
-        {
-          error: "Could not save assistant message",
-          detail: assistantMessageError.message,
-          conversationId: savedConversationId,
-          model,
-          modelMode,
-        },
-        500,
-      );
+      if (error) {
+        persistenceError = error.message;
+      }
     }
 
     return jsonResponse({
@@ -378,6 +374,7 @@ Deno.serve(async (req: Request) => {
       conversationId: savedConversationId,
       model,
       modelMode,
+      persistenceError,
       provider: "openai",
     });
   } catch (error) {
@@ -388,6 +385,7 @@ Deno.serve(async (req: Request) => {
         conversationId: savedConversationId,
         model,
         modelMode,
+        persistenceError,
       },
       500,
     );

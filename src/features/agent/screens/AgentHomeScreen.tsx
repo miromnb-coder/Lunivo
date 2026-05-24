@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Keyboard, Platform, SafeAreaView, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Keyboard,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  View,
+} from 'react-native';
 
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
@@ -13,9 +22,14 @@ const KEYBOARD_GAP = 18;
 export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
   const [composerHeight, setComposerHeight] = useState(72);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
+
+  function dismissComposer() {
+    Keyboard.dismiss();
+  }
 
   function handleSend() {
     if (!message.trim()) {
@@ -31,6 +45,7 @@ export function AgentHomeScreen() {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardOpen(true);
       const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, event.endCoordinates.height + KEYBOARD_GAP);
 
       Animated.parallel([
@@ -56,6 +71,7 @@ export function AgentHomeScreen() {
     });
 
     const hideSub = Keyboard.addListener(hideEvent, (event) => {
+      setKeyboardOpen(false);
       Animated.parallel([
         Animated.timing(composerBottom, {
           toValue: CLOSED_COMPOSER_BOTTOM,
@@ -86,6 +102,8 @@ export function AgentHomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      {keyboardOpen ? <Pressable onPress={dismissComposer} style={styles.dismissLayer} /> : null}
+
       <View style={styles.content}>
         <AgentHeader appName="Lunivo" points={263} />
         <Animated.View
@@ -123,9 +141,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: agentTheme.colors.background,
   },
+  dismissLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
   content: {
     flex: 1,
     paddingHorizontal: agentTheme.spacing.screen,
+    zIndex: 0,
   },
   heroContent: {
     flex: 1,
@@ -134,5 +157,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 24,
     right: 24,
+    zIndex: 2,
   },
 });

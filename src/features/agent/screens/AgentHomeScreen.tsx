@@ -19,9 +19,8 @@ import { agentTheme } from '../constants/agentTheme';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
-const MESSAGE_LIST_BOTTOM_GAP = 14;
-const KEYBOARD_MESSAGE_TOP_INSET = 132;
-const CLOSED_MESSAGE_TOP_INSET = 28;
+const MESSAGE_LIST_BOTTOM_GAP = 18;
+const MESSAGE_LIST_TOP_INSET = 28;
 const TEMPORARY_RESPONSE_DELAY_MS = 900;
 
 export function AgentHomeScreen() {
@@ -29,7 +28,6 @@ export function AgentHomeScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [composerHeight, setComposerHeight] = useState(66);
-  const [composerBottomInset, setComposerBottomInset] = useState(CLOSED_COMPOSER_BOTTOM);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
@@ -38,10 +36,9 @@ export function AgentHomeScreen() {
 
   const hasMessages = messages.length > 0 || isThinking;
   const messageListBottomInset = useMemo(
-    () => composerHeight + composerBottomInset + MESSAGE_LIST_BOTTOM_GAP,
-    [composerBottomInset, composerHeight],
+    () => composerHeight + CLOSED_COMPOSER_BOTTOM + MESSAGE_LIST_BOTTOM_GAP,
+    [composerHeight],
   );
-  const messageListTopInset = keyboardOpen ? KEYBOARD_MESSAGE_TOP_INSET : CLOSED_MESSAGE_TOP_INSET;
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -66,7 +63,6 @@ export function AgentHomeScreen() {
   const closeComposerPosition = useCallback(
     (duration = 220) => {
       setKeyboardOpen(false);
-      setComposerBottomInset(CLOSED_COMPOSER_BOTTOM);
 
       Animated.timing(composerBottom, {
         toValue: CLOSED_COMPOSER_BOTTOM,
@@ -142,7 +138,6 @@ export function AgentHomeScreen() {
     const showSub = Keyboard.addListener(showEvent, (event) => {
       setKeyboardOpen(true);
       const nextBottom = Math.max(CLOSED_COMPOSER_BOTTOM, event.endCoordinates.height + KEYBOARD_GAP);
-      setComposerBottomInset(nextBottom);
 
       Animated.timing(composerBottom, {
         toValue: nextBottom,
@@ -189,7 +184,7 @@ export function AgentHomeScreen() {
             messages={messages}
             bottomInset={messageListBottomInset}
             thinking={isThinking}
-            topInset={messageListTopInset}
+            topInset={MESSAGE_LIST_TOP_INSET}
           />
         ) : null}
 

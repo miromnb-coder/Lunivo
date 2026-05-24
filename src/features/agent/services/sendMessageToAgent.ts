@@ -10,6 +10,7 @@ type LunivoChatResponse = {
   detail?: string;
   model?: string;
   modelMode?: AgentModelMode;
+  persistenceError?: string | null;
   provider?: string;
 };
 
@@ -18,6 +19,36 @@ type SendMessageToAgentInput = {
   messages: ChatMessage[];
   modelMode?: AgentModelMode;
 };
+
+async function getFunctionErrorMessage(error: unknown) {
+  const fallback = error instanceof Error ? error.message : 'Edge Function request failed.';
+  const context = (error as { context?: { json?: () => Promise<unknown>; text?: () => Promise<string> } })?.context;
+
+  if (!context) {
+    return fallback;
+  }
+
+  try {
+    const payload = await context.json?.();
+
+    if (payload && typeof payload === 'object') {
+      const body = payload as { detail?: unknown; error?: unknown; message?: unknown };
+      const detail = typeof body.detail === 'string' ? body.detail : null;
+      const message = typeof body.error === 'string' ? body.error : typeof body.message === 'string' ? body.message : null;
+
+      return detail ?? message ?? fallback;
+    }
+  } catch {
+    // Fall back to text below.
+  }
+
+  try {
+    const text = await context.text?.();
+    return text?.trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export async function sendMessageToAgent({
   conversationId,
@@ -40,7 +71,7 @@ export async function sendMessageToAgent({
   });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(await getFunctionErrorMessage(error));
   }
 
   if (data?.error) {
@@ -50,7 +81,7 @@ export async function sendMessageToAgent({
   const answer = data?.answer?.trim();
 
   if (!answer) {
-    throw new Error('Lunivo returned an empty answer.');
+    throw new Error('Lunivo returned an empty answer. Try sending the question again.');
   }
 
   return {
@@ -58,6 +89,7 @@ export async function sendMessageToAgent({
     conversationId: data?.conversationId,
     model: data?.model,
     modelMode: data?.modelMode,
+    persistenceError: data?.persistenceError,
     provider: data?.provider,
   };
 }

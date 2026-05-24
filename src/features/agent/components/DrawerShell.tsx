@@ -26,9 +26,9 @@ type DrawerShellProps = {
 };
 
 const OPEN_SPRING = {
-  damping: 24,
+  damping: 30,
   mass: 0.9,
-  stiffness: 190,
+  stiffness: 176,
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -95,8 +95,8 @@ export function DrawerShell({ children }: DrawerShellProps) {
     });
 
   const mainScreenStyle = useAnimatedStyle(() => {
-    const borderRadius = interpolate(progress.value, [0, 1], [0, 34], Extrapolation.CLAMP);
-    const scale = interpolate(progress.value, [0, 1], [1, 0.945], Extrapolation.CLAMP);
+    const borderRadius = interpolate(progress.value, [0, 0.22, 1], [0, 42, 42], Extrapolation.CLAMP);
+    const scale = interpolate(progress.value, [0, 0.48, 1], [1, 0.955, 0.985], Extrapolation.CLAMP);
 
     return {
       borderRadius,
@@ -105,7 +105,8 @@ export function DrawerShell({ children }: DrawerShellProps) {
   });
 
   const mainShadowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: interpolate(progress.value, [0, 1], [0, 0.24], Extrapolation.CLAMP),
+    shadowOpacity: interpolate(progress.value, [0, 0.22, 1], [0, 0.25, 0.2], Extrapolation.CLAMP),
+    shadowRadius: interpolate(progress.value, [0, 0.35, 1], [0, 42, 34], Extrapolation.CLAMP),
   }));
 
   return (
@@ -140,9 +141,9 @@ const styles = StyleSheet.create({
     backgroundColor: agentTheme.colors.background,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: -18, height: 18 },
-    shadowRadius: 36,
-    elevation: 14,
+    shadowOffset: { width: -22, height: 18 },
+    shadowRadius: 0,
+    elevation: 18,
   },
   closeLayer: {
     ...StyleSheet.absoluteFillObject,

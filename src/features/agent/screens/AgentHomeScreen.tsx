@@ -17,6 +17,12 @@ import { DrawerShell } from '../components/DrawerShell';
 import { HeroMessage } from '../components/HeroMessage';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
+import {
+  fetchConversationMessages,
+  fetchConversations,
+  getCurrentUserInitials,
+  type ConversationSummary,
+} from '../services/chatHistory';
 import { sendMessageToAgent } from '../services/sendMessageToAgent';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
@@ -35,6 +41,9 @@ function createAgentErrorMessage(error: unknown) {
 }
 
 export function AgentHomeScreen() {
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [avatarInitials, setAvatarInitials] = useState('MS');
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
@@ -45,6 +54,20 @@ export function AgentHomeScreen() {
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
   const hasMessages = messages.length > 0 || isThinking;
+
+  const loadMenuData = useCallback(async () => {
+    try {
+      const [nextInitials, nextConversations] = await Promise.all([
+        getCurrentUserInitials(),
+        fetchConversations(),
+      ]);
+
+      setAvatarInitials(nextInitials);
+      setConversations(nextConversations);
+    } catch {
+      // Keep the menu usable even if history/profile loading fails.
+    }
+  }, []);
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -91,6 +114,41 @@ export function AgentHomeScreen() {
     closeComposerPosition(180);
   }
 
+  const handleNewChat = useCallback(() => {
+    sendRunRef.current += 1;
+    Keyboard.dismiss();
+    setActiveConversationId(null);
+    setMessage('');
+    setMessages([]);
+    setIsThinking(false);
+    animateHero(true, 180);
+  }, [animateHero]);
+
+  const handleSelectConversation = useCallback(
+    async (conversationId: string) => {
+      sendRunRef.current += 1;
+      Keyboard.dismiss();
+      setActiveConversationId(conversationId);
+      setMessage('');
+      setIsThinking(false);
+      animateHero(false, 160);
+
+      try {
+        const nextMessages = await fetchConversationMessages(conversationId);
+        setMessages(nextMessages);
+      } catch (error) {
+        setMessages([
+          {
+            id: createMessageId('assistant'),
+            role: 'assistant',
+            content: createAgentErrorMessage(error),
+          },
+        ]);
+      }
+    },
+    [animateHero],
+  );
+
   async function handleSend() {
     const trimmedMessage = message.trim();
 
@@ -131,6 +189,7 @@ export function AgentHomeScreen() {
           content: answer,
         },
       ]);
+      loadMenuData();
     } catch (error) {
       if (sendRunRef.current !== runId) {
         return;
@@ -150,6 +209,10 @@ export function AgentHomeScreen() {
       }
     }
   }
+
+  useEffect(() => {
+    loadMenuData();
+  }, [loadMenuData]);
 
   useEffect(() => {
     return () => {
@@ -199,7 +262,12 @@ export function AgentHomeScreen() {
   }, [animateHero, hasMessages, keyboardOpen]);
 
   return (
-    <DrawerShell>
+    <DrawerShell
+      avatarInitials={avatarInitials}
+      conversations={conversations}
+      onNewChat={handleNewChat}
+      onSelectConversation={handleSelectConversation}
+    >
       {({ openDrawer }) => (
         <SafeAreaView style={styles.screen}>
           {keyboardOpen ? <Pressable onPress={dismissComposer} style={styles.dismissLayer} /> : null}

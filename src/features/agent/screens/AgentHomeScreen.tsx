@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -19,7 +19,7 @@ import { agentTheme } from '../constants/agentTheme';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
-const MESSAGE_LIST_BOTTOM_GAP = 8;
+const MESSAGE_LIST_BOTTOM_INSET = 78;
 const MESSAGE_LIST_TOP_INSET = 28;
 const TEMPORARY_RESPONSE_DELAY_MS = 900;
 
@@ -27,7 +27,6 @@ export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [composerHeight, setComposerHeight] = useState(66);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
@@ -35,10 +34,6 @@ export function AgentHomeScreen() {
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
   const hasMessages = messages.length > 0 || isThinking;
-  const messageListBottomInset = useMemo(
-    () => composerHeight + MESSAGE_LIST_BOTTOM_GAP,
-    [composerHeight],
-  );
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -182,7 +177,7 @@ export function AgentHomeScreen() {
         {hasMessages ? (
           <ChatMessageList
             messages={messages}
-            bottomInset={messageListBottomInset}
+            bottomInset={MESSAGE_LIST_BOTTOM_INSET}
             thinking={isThinking}
             topInset={MESSAGE_LIST_TOP_INSET}
           />
@@ -211,7 +206,6 @@ export function AgentHomeScreen() {
           value={message}
           onBlur={handleComposerBlur}
           onChangeText={setMessage}
-          onHeightChange={setComposerHeight}
           onSend={handleSend}
         />
       </Animated.View>

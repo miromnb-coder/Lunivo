@@ -16,19 +16,29 @@ import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList
 import { HeroMessage } from '../components/HeroMessage';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
+import { sendMessageToAgent } from '../services/sendMessageToAgent';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
 const MESSAGE_LIST_BOTTOM_INSET = 78;
 const MESSAGE_LIST_TOP_INSET = 28;
-const TEMPORARY_RESPONSE_DELAY_MS = 900;
+
+function createMessageId(role: ChatMessage['role']) {
+  return `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createAgentErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return `I could not connect to Lunivo AI right now.\n\n${message}`;
+}
 
 export function AgentHomeScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sendRunRef = useRef(0);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
@@ -80,49 +90,69 @@ export function AgentHomeScreen() {
     closeComposerPosition(180);
   }
 
-  function handleSend() {
+  async function handleSend() {
     const trimmedMessage = message.trim();
 
     if (!trimmedMessage || isThinking) {
       return;
     }
 
-    if (responseTimeoutRef.current) {
-      clearTimeout(responseTimeoutRef.current);
-    }
+    const userMessage: ChatMessage = {
+      id: createMessageId('user'),
+      role: 'user',
+      content: trimmedMessage,
+    };
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        id: `${Date.now()}-user`,
-        role: 'user',
-        content: trimmedMessage,
-      },
-    ]);
+    const nextMessages = [...messages, userMessage];
+    const runId = sendRunRef.current + 1;
+    sendRunRef.current = runId;
+
+    setMessages(nextMessages);
     setMessage('');
     setIsThinking(true);
     animateHero(false, 160);
 
-    responseTimeoutRef.current = setTimeout(() => {
+    try {
+      const { answer } = await sendMessageToAgent({
+        messages: nextMessages,
+        modelMode: 'auto',
+      });
+
+      if (sendRunRef.current !== runId) {
+        return;
+      }
+
       setMessages((currentMessages) => [
         ...currentMessages,
         {
-          id: `${Date.now()}-assistant`,
+          id: createMessageId('assistant'),
           role: 'assistant',
-          content:
-            'I can help with that. Soon this will be connected to the real Lunivo AI study agent.',
+          content: answer,
         },
       ]);
-      setIsThinking(false);
-      responseTimeoutRef.current = null;
-    }, TEMPORARY_RESPONSE_DELAY_MS);
+    } catch (error) {
+      if (sendRunRef.current !== runId) {
+        return;
+      }
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: createMessageId('assistant'),
+          role: 'assistant',
+          content: createAgentErrorMessage(error),
+        },
+      ]);
+    } finally {
+      if (sendRunRef.current === runId) {
+        setIsThinking(false);
+      }
+    }
   }
 
   useEffect(() => {
     return () => {
-      if (responseTimeoutRef.current) {
-        clearTimeout(responseTimeoutRef.current);
-      }
+      sendRunRef.current += 1;
     };
   }, []);
 

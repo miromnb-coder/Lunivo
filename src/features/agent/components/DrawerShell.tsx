@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { agentTheme } from '../constants/agentTheme';
 import type { ConversationSummary } from '../services/chatHistory';
 import { SideMenu } from './SideMenu';
@@ -81,13 +82,24 @@ export function DrawerShell({
     setIsDrawerOpen(open);
   }, []);
 
+  const triggerDrawerHaptic = useCallback((open: boolean) => {
+    if (open) {
+      lunivoHaptics.openDrawer();
+      return;
+    }
+
+    lunivoHaptics.closeDrawer();
+  }, []);
+
   const openDrawer = useCallback(() => {
     Keyboard.dismiss();
+    lunivoHaptics.openDrawer();
     setIsDrawerOpen(true);
     progress.value = withTiming(1, OPEN_TIMING);
   }, [progress]);
 
   const closeDrawer = useCallback(() => {
+    lunivoHaptics.closeDrawer();
     progress.value = withTiming(0, CLOSE_TIMING, (finished) => {
       if (finished) {
         runOnJS(setOpenState)(false);
@@ -105,12 +117,14 @@ export function DrawerShell({
   }, [closeDrawer, isDrawerOpen, openDrawer]);
 
   const handleNewChat = useCallback(() => {
+    lunivoHaptics.newChat();
     onNewChat();
     closeDrawer();
   }, [closeDrawer, onNewChat]);
 
   const handleSelectConversation = useCallback(
     (conversationId: string) => {
+      lunivoHaptics.selectConversation();
       onSelectConversation(conversationId);
       closeDrawer();
     },
@@ -141,6 +155,8 @@ export function DrawerShell({
       const shouldOpen = event.velocityX > SWIPE_VELOCITY || (event.velocityX > -SWIPE_VELOCITY && progress.value > OPEN_PROGRESS_THRESHOLD);
       const shouldClose = event.velocityX < -SWIPE_VELOCITY || (event.velocityX < SWIPE_VELOCITY && progress.value < CLOSE_PROGRESS_THRESHOLD);
       const nextOpen = progress.value > 0.5 ? !shouldClose : shouldOpen;
+
+      runOnJS(triggerDrawerHaptic)(nextOpen);
 
       progress.value = withTiming(nextOpen ? 1 : 0, nextOpen ? SETTLE_OPEN_TIMING : SETTLE_CLOSE_TIMING, (finished) => {
         if (finished) {

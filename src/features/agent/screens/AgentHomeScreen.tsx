@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
 import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList';
@@ -161,6 +162,7 @@ export function AgentHomeScreen() {
         const nextMessages = await fetchConversationMessages(conversationId);
         setMessages(nextMessages);
       } catch (error) {
+        lunivoHaptics.error();
         setMessages([
           {
             id: createMessageId('assistant'),
@@ -180,6 +182,7 @@ export function AgentHomeScreen() {
       return;
     }
 
+    lunivoHaptics.sendMessage();
     streamAbortControllerRef.current?.abort();
 
     const userMessage: ChatMessage = {
@@ -266,6 +269,8 @@ export function AgentHomeScreen() {
         throw new Error('Lunivo stream returned an empty answer.');
       }
 
+      lunivoHaptics.messageComplete();
+
       if (canSaveConversation && savedConversationId) {
         try {
           await saveAssistantMessage({
@@ -308,6 +313,7 @@ export function AgentHomeScreen() {
           ),
         );
         setStreamScrollKey((currentKey) => currentKey + 1);
+        lunivoHaptics.messageComplete();
 
         if (canSaveConversation && savedConversationId) {
           try {
@@ -328,6 +334,7 @@ export function AgentHomeScreen() {
           return;
         }
 
+        lunivoHaptics.error();
         setMessages((currentMessages) =>
           currentMessages.map((currentMessage) =>
             currentMessage.id === assistantMessageId

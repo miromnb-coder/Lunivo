@@ -459,6 +459,7 @@ export function AgentHomeScreen() {
     <DrawerShell
       avatarInitials={avatarInitials}
       conversations={conversations}
+      gesturesEnabled={!plusSheetVisible}
       onNewChat={handleNewChat}
       onSelectConversation={handleSelectConversation}
     >

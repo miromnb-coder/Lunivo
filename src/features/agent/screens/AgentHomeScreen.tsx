@@ -16,6 +16,7 @@ import { ChatComposer } from '../components/ChatComposer';
 import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList';
 import { DrawerShell } from '../components/DrawerShell';
 import { HeroMessage } from '../components/HeroMessage';
+import { LunivoPlusSheet } from '../components/LunivoPlusSheet';
 import { QuickActions } from '../components/QuickActions';
 import { agentTheme } from '../constants/agentTheme';
 import {
@@ -62,6 +63,7 @@ export function AgentHomeScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [plusSheetVisible, setPlusSheetVisible] = useState(false);
   const [streamScrollKey, setStreamScrollKey] = useState(0);
   const sendRunRef = useRef(0);
   const streamAbortControllerRef = useRef<AbortController | null>(null);
@@ -134,11 +136,32 @@ export function AgentHomeScreen() {
     closeComposerPosition(180);
   }
 
+  function handleOpenPlusMenu() {
+    Keyboard.dismiss();
+    lunivoHaptics.openDrawer();
+    setPlusSheetVisible(true);
+  }
+
+  function handleClosePlusMenu() {
+    setPlusSheetVisible(false);
+  }
+
+  function handleSelectPlusPrompt(prompt: string) {
+    setMessage((currentMessage) => {
+      if (!currentMessage.trim()) {
+        return prompt;
+      }
+
+      return `${prompt}${currentMessage}`;
+    });
+  }
+
   const handleNewChat = useCallback(() => {
     sendRunRef.current += 1;
     streamAbortControllerRef.current?.abort();
     streamAbortControllerRef.current = null;
     Keyboard.dismiss();
+    setPlusSheetVisible(false);
     setActiveConversationId(null);
     setMessage('');
     setMessages([]);
@@ -153,6 +176,7 @@ export function AgentHomeScreen() {
       streamAbortControllerRef.current?.abort();
       streamAbortControllerRef.current = null;
       Keyboard.dismiss();
+      setPlusSheetVisible(false);
       setActiveConversationId(conversationId);
       setMessage('');
       setIsThinking(false);
@@ -182,6 +206,7 @@ export function AgentHomeScreen() {
       return;
     }
 
+    setPlusSheetVisible(false);
     lunivoHaptics.sendMessage();
     streamAbortControllerRef.current?.abort();
 
@@ -367,6 +392,7 @@ export function AgentHomeScreen() {
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
+      setPlusSheetVisible(false);
       const nextKeyboardHeight = event.endCoordinates.height;
       setKeyboardOpen(true);
       setKeyboardHeight(nextKeyboardHeight);
@@ -453,9 +479,16 @@ export function AgentHomeScreen() {
               onBlur={handleComposerBlur}
               onChangeText={setMessage}
               onHeightChange={setComposerHeight}
+              onOpenPlusMenu={handleOpenPlusMenu}
               onSend={handleSend}
             />
           </Animated.View>
+
+          <LunivoPlusSheet
+            visible={plusSheetVisible}
+            onClose={handleClosePlusMenu}
+            onSelectPrompt={handleSelectPlusPrompt}
+          />
         </SafeAreaView>
       )}
     </DrawerShell>

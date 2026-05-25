@@ -17,9 +17,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { agentTheme } from '../constants/agentTheme';
+import type { LunivoAttachment } from '../types/attachments';
 
 type LunivoPlusSheetProps = {
   visible: boolean;
+  onAddPhotos?: (photos: LunivoAttachment[]) => void;
   onClose: () => void;
   onSelectPrompt?: (prompt: string) => void;
 };
@@ -39,6 +41,8 @@ const SHEET_BACKGROUND = '#fbfbfa';
 const ICON_COLOR = 'rgba(31,36,48,0.76)';
 const MUTED_ICON_COLOR = 'rgba(115,115,130,0.72)';
 const DIVIDER_COLOR = 'rgba(31,36,48,0.075)';
+const SELECTION_BLUE = '#0A84FF';
+const MAX_SELECTED_PHOTOS = 5;
 
 const CLOSE_DISTANCE = 88;
 const CLOSE_VELOCITY = 0.85;
@@ -104,15 +108,26 @@ function isRenderableImageUri(uri?: string | null) {
   );
 }
 
-export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlusSheetProps) {
+export function LunivoPlusSheet({ visible, onAddPhotos, onClose, onSelectPrompt }: LunivoPlusSheetProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const dragTranslateY = useRef(new Animated.Value(0)).current;
+  const ctaTranslateY = useRef(new Animated.Value(120)).current;
+  const ctaOpacity = useRef(new Animated.Value(0)).current;
   const scrollYRef = useRef(0);
   const sheetScrollRef = useRef<ScrollView | null>(null);
   const photoStripScrollRef = useRef<ScrollView | null>(null);
   const [recentPhotos, setRecentPhotos] = useState<RecentPhoto[]>([]);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+
+  const selectedPhotos = useMemo(
+    () => selectedPhotoIds
+      .map((photoId) => recentPhotos.find((photo) => photo.id === photoId))
+      .filter((photo): photo is RecentPhoto => photo !== undefined),
+    [recentPhotos, selectedPhotoIds],
+  );
+  const selectedPhotoCount = selectedPhotos.length;
 
   function resetScrollPositions() {
     scrollYRef.current = 0;
@@ -124,6 +139,7 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
     if (visible) {
       lunivoHaptics.openDrawer();
       dragTranslateY.setValue(0);
+      setSelectedPhotoIds([]);
       resetScrollPositions();
       loadRecentPhotos();
 
@@ -142,10 +158,29 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
     }).start(({ finished }) => {
       if (finished) {
         dragTranslateY.setValue(0);
+        setSelectedPhotoIds([]);
         resetScrollPositions();
       }
     });
   }, [dragTranslateY, progress, visible]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(ctaOpacity, {
+        toValue: selectedPhotoCount > 0 ? 1 : 0,
+        duration: 170,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(ctaTranslateY, {
+        toValue: selectedPhotoCount > 0 ? 0 : 120,
+        damping: 22,
+        stiffness: 260,
+        mass: 0.85,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [ctaOpacity, ctaTranslateY, selectedPhotoCount]);
 
   async function loadRecentPhotos() {
     try {
@@ -163,7 +198,7 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
       }
 
       const result = await MediaLibrary.getAssetsAsync({
-        first: 8,
+        first: 12,
         mediaType: MediaLibrary.MediaType.photo,
       });
 
@@ -201,6 +236,39 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
   function selectPrompt(prompt: string) {
     lunivoHaptics.selectConversation();
     onSelectPrompt?.(prompt);
+    onClose();
+  }
+
+  function togglePhoto(photo: RecentPhoto) {
+    setSelectedPhotoIds((currentIds) => {
+      if (currentIds.includes(photo.id)) {
+        lunivoHaptics.selectConversation();
+        return currentIds.filter((photoId) => photoId !== photo.id);
+      }
+
+      if (currentIds.length >= MAX_SELECTED_PHOTOS) {
+        lunivoHaptics.error();
+        return currentIds;
+      }
+
+      lunivoHaptics.selectConversation();
+      return [...currentIds, photo.id];
+    });
+  }
+
+  function addSelectedPhotos() {
+    if (selectedPhotos.length === 0) {
+      return;
+    }
+
+    lunivoHaptics.newChat();
+    onAddPhotos?.(
+      selectedPhotos.map((photo) => ({
+        id: photo.id,
+        type: 'photo',
+        uri: photo.uri,
+      })),
+    );
     onClose();
   }
 
@@ -284,7 +352,7 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
         <ScrollView
           ref={sheetScrollRef}
           bounces={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, selectedPhotoCount > 0 && styles.scrollContentWithCta]}
           keyboardShouldPersistTaps="handled"
           onScroll={(event) => {
             scrollYRef.current = Math.max(0, event.nativeEvent.contentOffset.y);
@@ -312,9 +380,19 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
           >
             <CameraCard onPress={() => selectPrompt('I want to take a photo and study from it: ')} />
             {recentPhotos.length > 0 ? (
-              recentPhotos.map((photo) => (
-                <PhotoCard key={photo.id} uri={photo.uri} onPress={() => selectPrompt('Explain this image clearly step by step: ')} />
-              ))
+              recentPhotos.map((photo) => {
+                const selectedIndex = selectedPhotoIds.indexOf(photo.id);
+
+                return (
+                  <PhotoCard
+                    key={photo.id}
+                    uri={photo.uri}
+                    selected={selectedIndex !== -1}
+                    selectedIndex={selectedIndex + 1}
+                    onPress={() => togglePhoto(photo)}
+                  />
+                );
+              })
             ) : (
               <>
                 <PlaceholderPhotoCard />
@@ -348,6 +426,29 @@ export function LunivoPlusSheet({ visible, onClose, onSelectPrompt }: LunivoPlus
             ))}
           </View>
         </ScrollView>
+
+        <Animated.View
+          pointerEvents={selectedPhotoCount > 0 ? 'auto' : 'none'}
+          style={[
+            styles.ctaWrap,
+            {
+              bottom: Math.max(insets.bottom + 11, 22),
+              opacity: ctaOpacity,
+              transform: [{ translateY: ctaTranslateY }],
+            },
+          ]}
+        >
+          <Pressable
+            accessibilityLabel={`Add ${selectedPhotoCount} photo${selectedPhotoCount === 1 ? '' : 's'}`}
+            accessibilityRole="button"
+            onPress={addSelectedPhotos}
+            style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaButtonPressed]}
+          >
+            <Text allowFontScaling={false} style={styles.ctaText}>
+              Add {selectedPhotoCount} photo{selectedPhotoCount === 1 ? '' : 's'}
+            </Text>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     </View>
   );
@@ -377,15 +478,39 @@ function CameraCard({ onPress }: { onPress: () => void }) {
   );
 }
 
-function PhotoCard({ uri, onPress }: { uri: string; onPress: () => void }) {
+function PhotoCard({
+  uri,
+  selected,
+  selectedIndex,
+  onPress,
+}: {
+  uri: string;
+  selected: boolean;
+  selectedIndex: number;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityLabel="Recent photo"
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.photoCard, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.photoCard,
+        selected && styles.photoCardSelected,
+        pressed && styles.pressed,
+      ]}
     >
       <Image source={{ uri }} style={styles.photoImage} />
+      {selected ? (
+        <>
+          <View style={styles.selectedPhotoOverlay} />
+          <View style={styles.selectedBadge}>
+            <Text allowFontScaling={false} style={styles.selectedBadgeText}>
+              {selectedIndex}
+            </Text>
+          </View>
+        </>
+      ) : null}
     </Pressable>
   );
 }
@@ -473,6 +598,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 10,
   },
+  scrollContentWithCta: {
+    paddingBottom: 108,
+  },
   photosHeader: {
     paddingHorizontal: 22,
     marginBottom: 18,
@@ -531,10 +659,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(31,36,48,0.065)',
   },
+  photoCardSelected: {
+    borderWidth: 4,
+    borderColor: SELECTION_BLUE,
+  },
   photoImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  selectedPhotoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  selectedBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 31,
+    height: 31,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    shadowColor: '#111827',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  selectedBadgeText: {
+    color: '#111827',
+    fontSize: 15,
+    lineHeight: 18,
+    fontWeight: '800',
   },
   placeholderCard: {
     width: 132,
@@ -625,6 +783,34 @@ const styles = StyleSheet.create({
   },
   studyToolsList: {
     marginBottom: 8,
+  },
+  ctaWrap: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+  },
+  ctaButton: {
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#050505',
+    shadowColor: '#111827',
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  ctaButtonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.985 }],
+  },
+  ctaText: {
+    color: '#ffffff',
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '700',
+    letterSpacing: -0.22,
   },
   pressed: {
     opacity: 0.58,

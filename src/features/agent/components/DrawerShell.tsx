@@ -26,6 +26,7 @@ type DrawerShellProps = {
   avatarInitials: string;
   children: (controls: DrawerControls) => ReactNode;
   conversations: ConversationSummary[];
+  gesturesEnabled?: boolean;
   onNewChat: () => void;
   onSelectConversation: (conversationId: string) => void;
 };
@@ -69,6 +70,7 @@ export function DrawerShell({
   avatarInitials,
   children,
   conversations,
+  gesturesEnabled = true,
   onNewChat,
   onSelectConversation,
 }: DrawerShellProps) {
@@ -132,6 +134,7 @@ export function DrawerShell({
   );
 
   const panGesture = Gesture.Pan()
+    .enabled(gesturesEnabled)
     .activeOffsetX([-DRAG_ACTIVATION_DISTANCE, DRAG_ACTIVATION_DISTANCE])
     .failOffsetY([-28, 28])
     .onStart(() => {

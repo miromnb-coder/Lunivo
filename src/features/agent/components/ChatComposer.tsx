@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   type LayoutChangeEvent,
@@ -17,6 +19,7 @@ import {
 } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
+import type { LunivoAttachment } from '../types/attachments';
 
 const COMPOSER_ICON_COLOR = 'rgba(15,17,21,0.84)';
 const DISABLED_ICON_COLOR = 'rgba(110,113,124,0.42)';
@@ -29,15 +32,18 @@ const HEIGHT_REPORT_THRESHOLD = 6;
 
 const IDLE_COMPOSER_HEIGHT = 66;
 const ACTIVE_COMPOSER_MIN_HEIGHT = 112;
+const ATTACHMENT_PREVIEW_HEIGHT = 68;
 
 type ChatComposerProps = {
   value: string;
+  attachments?: LunivoAttachment[];
   style?: StyleProp<ViewStyle>;
   onBlur?: () => void;
   onChangeText: (value: string) => void;
   onFocus?: () => void;
   onHeightChange?: (height: number) => void;
   onOpenPlusMenu?: () => void;
+  onRemoveAttachment?: (attachmentId: string) => void;
   onSend?: () => void;
 };
 
@@ -60,12 +66,14 @@ function estimateWrappedInputHeight(text: string, inputWidth: number) {
 
 export function ChatComposer({
   value,
+  attachments = [],
   style,
   onBlur,
   onChangeText,
   onFocus,
   onHeightChange,
   onOpenPlusMenu,
+  onRemoveAttachment,
   onSend,
 }: ChatComposerProps) {
   const inputRef = useRef<TextInputType>(null);
@@ -79,7 +87,8 @@ export function ChatComposer({
   const [inputWidth, setInputWidth] = useState(0);
 
   const hasText = value.trim().length > 0;
-  const isActive = focused || forcedActive;
+  const hasAttachments = attachments.length > 0;
+  const isActive = focused || forcedActive || hasAttachments;
   const canSend = hasText;
 
   const estimatedInputHeight = useMemo(
@@ -126,10 +135,10 @@ export function ChatComposer({
   }, [isActive, targetInputHeight, value.length]);
 
   useEffect(() => {
-    if (!focused) {
+    if (!focused && !hasAttachments) {
       setForcedActive(false);
     }
-  }, [focused]);
+  }, [focused, hasAttachments]);
 
   function activateComposer() {
     setForcedActive(true);
@@ -183,10 +192,11 @@ export function ChatComposer({
     onHeightChange?.(nextHeight);
   }
 
+  const activeMinHeight = ACTIVE_COMPOSER_MIN_HEIGHT + (hasAttachments ? ATTACHMENT_PREVIEW_HEIGHT : 0);
   const animatedComposerStyle = {
     minHeight: transition.interpolate({
       inputRange: [0, 1],
-      outputRange: [IDLE_COMPOSER_HEIGHT, ACTIVE_COMPOSER_MIN_HEIGHT],
+      outputRange: [IDLE_COMPOSER_HEIGHT, activeMinHeight],
     }),
     borderRadius: transition.interpolate({
       inputRange: [0, 1],
@@ -212,6 +222,31 @@ export function ChatComposer({
       style={[styles.composer, animatedComposerStyle, style]}
     >
       <Pressable onPressIn={activateComposer} style={styles.composerPressable}>
+        {hasAttachments ? (
+          <ScrollView
+            contentContainerStyle={styles.attachmentStripContent}
+            horizontal
+            keyboardShouldPersistTaps="handled"
+            showsHorizontalScrollIndicator={false}
+            style={styles.attachmentStrip}
+          >
+            {attachments.map((attachment) => (
+              <View key={attachment.id} style={styles.attachmentPreview}>
+                <Image source={{ uri: attachment.uri }} style={styles.attachmentImage} />
+                <Pressable
+                  accessibilityLabel="Remove photo"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => onRemoveAttachment?.(attachment.id)}
+                  style={({ pressed }) => [styles.removeAttachmentButton, pressed && styles.buttonPressed]}
+                >
+                  <Ionicons name="close-outline" size={15} color="#ffffff" />
+                </Pressable>
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
+
         <View style={[styles.inputShell, isActive ? styles.inputShellActive : styles.inputShellIdle]}>
           <TextInput
             ref={inputRef}
@@ -330,6 +365,39 @@ const styles = StyleSheet.create({
   },
   composerPressable: {
     flex: 1,
+  },
+  attachmentStrip: {
+    marginBottom: 12,
+  },
+  attachmentStripContent: {
+    gap: 10,
+    paddingRight: 3,
+  },
+  attachmentPreview: {
+    width: 58,
+    height: 58,
+    borderRadius: 17,
+    overflow: 'visible',
+    backgroundColor: '#f0efec',
+  },
+  attachmentImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 17,
+    resizeMode: 'cover',
+  },
+  removeAttachmentButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 21,
+    height: 21,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111111',
+    borderWidth: 2,
+    borderColor: '#fbfbfa',
   },
   inputShell: {
     position: 'relative',

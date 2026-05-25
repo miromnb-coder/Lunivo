@@ -23,6 +23,12 @@ import {
   getCurrentUserInitials,
   type ConversationSummary,
 } from '../services/chatHistory';
+import {
+  getOrCreateConversation,
+  saveAssistantMessage,
+  saveUserMessage,
+  touchConversationUpdatedAt,
+} from '../services/conversationStorage';
 import { sendMessageToAgent } from '../services/sendMessageToAgent';
 import { streamMessageToAgent } from '../services/streamMessageToAgent';
 
@@ -32,6 +38,8 @@ const CLOSED_MESSAGE_BOTTOM_GAP = 260;
 const KEYBOARD_MESSAGE_BOTTOM_GAP = 34;
 const MESSAGE_LIST_TOP_INSET = 28;
 const DEFAULT_COMPOSER_HEIGHT = 66;
+const CHAT_MODEL_MODE = 'fast';
+const CHAT_MODEL = 'gpt-5-nano';
 
 function createMessageId(role: ChatMessage['role']) {
   return `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -191,6 +199,8 @@ export function AgentHomeScreen() {
     const runId = sendRunRef.current + 1;
     const abortController = new AbortController();
     let streamedAnswer = '';
+    let savedConversationId = activeConversationId;
+    let canSaveConversation = false;
 
     sendRunRef.current = runId;
     streamAbortControllerRef.current = abortController;
@@ -202,8 +212,32 @@ export function AgentHomeScreen() {
     animateHero(false, 160);
 
     try {
+      try {
+        savedConversationId = await getOrCreateConversation({
+          conversationId: activeConversationId,
+          firstMessage: trimmedMessage,
+          modelMode: CHAT_MODEL_MODE,
+        });
+
+        if (sendRunRef.current !== runId) {
+          return;
+        }
+
+        canSaveConversation = true;
+        setActiveConversationId(savedConversationId);
+        await saveUserMessage({
+          content: trimmedMessage,
+          conversationId: savedConversationId,
+          model: CHAT_MODEL,
+        });
+        loadMenuData();
+      } catch {
+        // AI should still work even if saving the conversation fails.
+        canSaveConversation = false;
+      }
+
       await streamMessageToAgent({
-        conversationId: activeConversationId,
+        conversationId: savedConversationId,
         messages: nextMessages,
         signal: abortController.signal,
         onDelta: (delta) => {
@@ -232,7 +266,19 @@ export function AgentHomeScreen() {
         throw new Error('Lunivo stream returned an empty answer.');
       }
 
-      loadMenuData();
+      if (canSaveConversation && savedConversationId) {
+        try {
+          await saveAssistantMessage({
+            content: streamedAnswer,
+            conversationId: savedConversationId,
+            model: CHAT_MODEL,
+          });
+          await touchConversationUpdatedAt(savedConversationId);
+          loadMenuData();
+        } catch {
+          // Keep the finished AI answer visible even if history saving fails.
+        }
+      }
     } catch (streamError) {
       if (sendRunRef.current !== runId || abortController.signal.aborted) {
         return;
@@ -240,9 +286,9 @@ export function AgentHomeScreen() {
 
       try {
         const { answer, conversationId } = await sendMessageToAgent({
-          conversationId: activeConversationId,
+          conversationId: savedConversationId,
           messages: nextMessages,
-          modelMode: 'fast',
+          modelMode: CHAT_MODEL_MODE,
         });
 
         if (sendRunRef.current !== runId) {
@@ -250,6 +296,7 @@ export function AgentHomeScreen() {
         }
 
         if (conversationId) {
+          savedConversationId = conversationId;
           setActiveConversationId(conversationId);
         }
 
@@ -261,6 +308,20 @@ export function AgentHomeScreen() {
           ),
         );
         setStreamScrollKey((currentKey) => currentKey + 1);
+
+        if (canSaveConversation && savedConversationId) {
+          try {
+            await saveAssistantMessage({
+              content: answer,
+              conversationId: savedConversationId,
+              model: CHAT_MODEL,
+            });
+            await touchConversationUpdatedAt(savedConversationId);
+          } catch {
+            // Keep the fallback answer visible even if history saving fails.
+          }
+        }
+
         loadMenuData();
       } catch (fallbackError) {
         if (sendRunRef.current !== runId) {

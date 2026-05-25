@@ -37,6 +37,7 @@ type ChatComposerProps = {
   onChangeText: (value: string) => void;
   onFocus?: () => void;
   onHeightChange?: (height: number) => void;
+  onOpenPlusMenu?: () => void;
   onSend?: () => void;
 };
 
@@ -64,6 +65,7 @@ export function ChatComposer({
   onChangeText,
   onFocus,
   onHeightChange,
+  onOpenPlusMenu,
   onSend,
 }: ChatComposerProps) {
   const inputRef = useRef<TextInputType>(null);
@@ -144,6 +146,10 @@ export function ChatComposer({
     setFocused(false);
     setForcedActive(false);
     onBlur?.();
+  }
+
+  function handleOpenPlusMenu() {
+    onOpenPlusMenu?.();
   }
 
   function handleSend() {
@@ -231,7 +237,7 @@ export function ChatComposer({
 
           {!isActive ? (
             <View pointerEvents="box-none" style={styles.idleLeftSlot}>
-              <ComposerButton accessibilityLabel="Add attachment" onPress={() => {}} size="idle">
+              <ComposerButton accessibilityLabel="Open attachment menu" onPress={handleOpenPlusMenu} size="idle">
                 <Ionicons name="add-outline" size={30} color={COMPOSER_ICON_COLOR} />
               </ComposerButton>
             </View>
@@ -241,7 +247,7 @@ export function ChatComposer({
         {isActive ? (
           <View style={styles.controlsRow}>
             <View style={styles.leftControls}>
-              <ComposerButton accessibilityLabel="Add attachment" onPress={() => {}}>
+              <ComposerButton accessibilityLabel="Open attachment menu" onPress={handleOpenPlusMenu}>
                 <Ionicons name="add-outline" size={28} color={COMPOSER_ICON_COLOR} />
               </ComposerButton>
             </View>

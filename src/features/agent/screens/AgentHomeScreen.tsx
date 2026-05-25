@@ -33,6 +33,7 @@ import {
 } from '../services/conversationStorage';
 import { sendMessageToAgent } from '../services/sendMessageToAgent';
 import { streamMessageToAgent } from '../services/streamMessageToAgent';
+import type { LunivoAttachment } from '../types/attachments';
 
 const CLOSED_COMPOSER_BOTTOM = 38;
 const KEYBOARD_GAP = 8;
@@ -42,6 +43,7 @@ const MESSAGE_LIST_TOP_INSET = 28;
 const DEFAULT_COMPOSER_HEIGHT = 66;
 const CHAT_MODEL_MODE = 'fast';
 const CHAT_MODEL = 'gpt-5-nano';
+const ATTACHMENT_NOTE = 'Photos are attached in the composer preview, but image analysis is not enabled yet.';
 
 function createMessageId(role: ChatMessage['role']) {
   return `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -64,6 +66,7 @@ export function AgentHomeScreen() {
   const [isThinking, setIsThinking] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [plusSheetVisible, setPlusSheetVisible] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<LunivoAttachment[]>([]);
   const [streamScrollKey, setStreamScrollKey] = useState(0);
   const sendRunRef = useRef(0);
   const streamAbortControllerRef = useRef<AbortController | null>(null);
@@ -146,6 +149,19 @@ export function AgentHomeScreen() {
     setPlusSheetVisible(false);
   }
 
+  function handleAddPhotos(photos: LunivoAttachment[]) {
+    setSelectedAttachments((currentAttachments) => {
+      const existingIds = new Set(currentAttachments.map((attachment) => attachment.id));
+      const nextPhotos = photos.filter((photo) => !existingIds.has(photo.id));
+      return [...currentAttachments, ...nextPhotos].slice(0, 5);
+    });
+  }
+
+  function handleRemoveAttachment(attachmentId: string) {
+    lunivoHaptics.selectConversation();
+    setSelectedAttachments((currentAttachments) => currentAttachments.filter((attachment) => attachment.id !== attachmentId));
+  }
+
   function handleSelectPlusPrompt(prompt: string) {
     setMessage((currentMessage) => {
       if (!currentMessage.trim()) {
@@ -162,6 +178,7 @@ export function AgentHomeScreen() {
     streamAbortControllerRef.current = null;
     Keyboard.dismiss();
     setPlusSheetVisible(false);
+    setSelectedAttachments([]);
     setActiveConversationId(null);
     setMessage('');
     setMessages([]);
@@ -177,6 +194,7 @@ export function AgentHomeScreen() {
       streamAbortControllerRef.current = null;
       Keyboard.dismiss();
       setPlusSheetVisible(false);
+      setSelectedAttachments([]);
       setActiveConversationId(conversationId);
       setMessage('');
       setIsThinking(false);
@@ -207,6 +225,10 @@ export function AgentHomeScreen() {
     }
 
     setPlusSheetVisible(false);
+    const attachmentsForMessage = selectedAttachments;
+    const messageForAI = attachmentsForMessage.length > 0
+      ? `${trimmedMessage}\n\n${ATTACHMENT_NOTE}`
+      : trimmedMessage;
     lunivoHaptics.sendMessage();
     streamAbortControllerRef.current?.abort();
 
@@ -224,6 +246,7 @@ export function AgentHomeScreen() {
     };
 
     const nextMessages = [...messages, userMessage];
+    const messagesForAI = [...messages, { ...userMessage, content: messageForAI }];
     const runId = sendRunRef.current + 1;
     const abortController = new AbortController();
     let streamedAnswer = '';
@@ -235,6 +258,7 @@ export function AgentHomeScreen() {
 
     setMessages([...nextMessages, assistantMessage]);
     setMessage('');
+    setSelectedAttachments([]);
     setIsThinking(true);
     setStreamScrollKey((currentKey) => currentKey + 1);
     animateHero(false, 160);
@@ -266,7 +290,7 @@ export function AgentHomeScreen() {
 
       await streamMessageToAgent({
         conversationId: savedConversationId,
-        messages: nextMessages,
+        messages: messagesForAI,
         signal: abortController.signal,
         onDelta: (delta) => {
           if (sendRunRef.current !== runId) {
@@ -317,7 +341,7 @@ export function AgentHomeScreen() {
       try {
         const { answer, conversationId } = await sendMessageToAgent({
           conversationId: savedConversationId,
-          messages: nextMessages,
+          messages: messagesForAI,
           modelMode: CHAT_MODEL_MODE,
         });
 
@@ -475,17 +499,20 @@ export function AgentHomeScreen() {
             style={[styles.composerWrap, { bottom: composerBottom }]}
           >
             <ChatComposer
+              attachments={selectedAttachments}
               value={message}
               onBlur={handleComposerBlur}
               onChangeText={setMessage}
               onHeightChange={setComposerHeight}
               onOpenPlusMenu={handleOpenPlusMenu}
+              onRemoveAttachment={handleRemoveAttachment}
               onSend={handleSend}
             />
           </Animated.View>
 
           <LunivoPlusSheet
             visible={plusSheetVisible}
+            onAddPhotos={handleAddPhotos}
             onClose={handleClosePlusMenu}
             onSelectPrompt={handleSelectPlusPrompt}
           />

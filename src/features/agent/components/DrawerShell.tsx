@@ -27,6 +27,7 @@ type DrawerShellProps = {
   children: (controls: DrawerControls) => ReactNode;
   conversations: ConversationSummary[];
   gesturesEnabled?: boolean;
+  overlay?: ReactNode;
   onNewChat: () => void;
   onOpenLibrary: () => void;
   onOpenProfile: () => void;
@@ -73,6 +74,7 @@ export function DrawerShell({
   children,
   conversations,
   gesturesEnabled = true,
+  overlay,
   onNewChat,
   onOpenLibrary,
   onOpenProfile,
@@ -236,6 +238,8 @@ export function DrawerShell({
             />
           ) : null}
         </Animated.View>
+
+        {overlay}
       </View>
     </GestureDetector>
   );

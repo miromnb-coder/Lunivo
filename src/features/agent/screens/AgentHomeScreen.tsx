@@ -23,6 +23,7 @@ import { agentTheme } from '../constants/agentTheme';
 import { useAgentChat } from '../hooks/useAgentChat';
 import { useAgentConversations } from '../hooks/useAgentConversations';
 import type { LunivoAttachment } from '../types/attachment';
+import { LibraryScreen } from './LibraryScreen';
 
 const CLOSED_COMPOSER_BOTTOM = agentLayoutConfig.closedComposerBottom;
 const KEYBOARD_GAP = agentLayoutConfig.keyboardGap;
@@ -31,7 +32,10 @@ const KEYBOARD_MESSAGE_BOTTOM_GAP = agentLayoutConfig.keyboardMessageBottomGap;
 const MESSAGE_LIST_TOP_INSET = agentLayoutConfig.messageListTopInset;
 const DEFAULT_COMPOSER_HEIGHT = agentLayoutConfig.defaultComposerHeight;
 
+type ActiveView = 'chat' | 'library';
+
 export function AgentHomeScreen() {
+  const [activeView, setActiveView] = useState<ActiveView>('chat');
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -80,6 +84,7 @@ export function AgentHomeScreen() {
   });
 
   const hasMessages = chat.hasMessages;
+  const isLibraryView = activeView === 'library';
   const messageListBottomInset = keyboardOpen
     ? keyboardHeight + KEYBOARD_GAP + composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
     : CLOSED_MESSAGE_BOTTOM_GAP;
@@ -99,6 +104,29 @@ export function AgentHomeScreen() {
       animateHero(!hasMessages, duration);
     },
     [animateHero, composerBottom, hasMessages],
+  );
+
+  const openChatView = useCallback(() => {
+    setActiveView('chat');
+  }, []);
+
+  const openLibraryView = useCallback(() => {
+    closeActiveOverlays();
+    closeComposerPosition(180);
+    setActiveView('library');
+  }, [closeActiveOverlays, closeComposerPosition]);
+
+  const handleNewChat = useCallback(() => {
+    openChatView();
+    chat.startNewChat();
+  }, [chat, openChatView]);
+
+  const handleSelectConversation = useCallback(
+    (conversationId: string) => {
+      openChatView();
+      chat.selectConversation(conversationId);
+    },
+    [chat, openChatView],
   );
 
   function dismissComposer() {
@@ -171,75 +199,82 @@ export function AgentHomeScreen() {
   }, [animateHero, closeComposerPosition, composerBottom]);
 
   useEffect(() => {
-    if (keyboardOpen) {
+    if (keyboardOpen || isLibraryView) {
       return;
     }
 
     animateHero(!hasMessages, 220);
-  }, [animateHero, hasMessages, keyboardOpen]);
+  }, [animateHero, hasMessages, isLibraryView, keyboardOpen]);
 
   return (
     <DrawerShell
       avatarInitials={avatarInitials}
       conversations={conversations}
       gesturesEnabled={!plusSheetVisible}
-      onNewChat={chat.startNewChat}
-      onSelectConversation={chat.selectConversation}
+      onNewChat={handleNewChat}
+      onOpenLibrary={openLibraryView}
+      onSelectConversation={handleSelectConversation}
     >
       {({ openDrawer }) => (
         <SafeAreaView style={styles.screen}>
           {keyboardOpen ? <Pressable onPress={dismissComposer} style={styles.dismissLayer} /> : null}
 
-          <View style={styles.content}>
-            <AgentHeader appName="Lunivo" onMenuPress={openDrawer} points={263} />
+          {isLibraryView ? (
+            <LibraryScreen onMenuPress={openDrawer} />
+          ) : (
+            <>
+              <View style={styles.content}>
+                <AgentHeader appName="Lunivo" onMenuPress={openDrawer} points={263} />
 
-            {hasMessages ? (
-              <ChatMessageList
-                messages={chat.messages}
-                bottomInset={messageListBottomInset}
-                scrollKey={chat.streamScrollKey}
-                thinking={chat.isThinking}
-                topInset={MESSAGE_LIST_TOP_INSET}
+                {hasMessages ? (
+                  <ChatMessageList
+                    messages={chat.messages}
+                    bottomInset={messageListBottomInset}
+                    scrollKey={chat.streamScrollKey}
+                    thinking={chat.isThinking}
+                    topInset={MESSAGE_LIST_TOP_INSET}
+                  />
+                ) : null}
+
+                <Animated.View
+                  pointerEvents={hasMessages ? 'none' : 'box-none'}
+                  style={[
+                    hasMessages ? styles.heroContentOverlay : styles.startContent,
+                    {
+                      opacity: heroOpacity,
+                      transform: [{ translateY: heroTranslateY }],
+                    },
+                  ]}
+                >
+                  <HeroMessage />
+                  <QuickActions />
+                </Animated.View>
+              </View>
+
+              <Animated.View
+                pointerEvents="box-none"
+                style={[styles.composerWrap, { bottom: composerBottom }]}
+              >
+                <ChatComposer
+                  attachments={chat.selectedAttachments}
+                  value={chat.message}
+                  onBlur={handleComposerBlur}
+                  onChangeText={chat.setMessage}
+                  onHeightChange={setComposerHeight}
+                  onOpenPlusMenu={handleOpenPlusMenu}
+                  onRemoveAttachment={chat.removeAttachment}
+                  onSend={chat.sendMessage}
+                />
+              </Animated.View>
+
+              <LunivoPlusSheet
+                visible={plusSheetVisible}
+                onAddPhotos={handleAddPhotos}
+                onClose={handleClosePlusMenu}
+                onSelectPrompt={handleSelectPlusPrompt}
               />
-            ) : null}
-
-            <Animated.View
-              pointerEvents={hasMessages ? 'none' : 'box-none'}
-              style={[
-                hasMessages ? styles.heroContentOverlay : styles.startContent,
-                {
-                  opacity: heroOpacity,
-                  transform: [{ translateY: heroTranslateY }],
-                },
-              ]}
-            >
-              <HeroMessage />
-              <QuickActions />
-            </Animated.View>
-          </View>
-
-          <Animated.View
-            pointerEvents="box-none"
-            style={[styles.composerWrap, { bottom: composerBottom }]}
-          >
-            <ChatComposer
-              attachments={chat.selectedAttachments}
-              value={chat.message}
-              onBlur={handleComposerBlur}
-              onChangeText={chat.setMessage}
-              onHeightChange={setComposerHeight}
-              onOpenPlusMenu={handleOpenPlusMenu}
-              onRemoveAttachment={chat.removeAttachment}
-              onSend={chat.sendMessage}
-            />
-          </Animated.View>
-
-          <LunivoPlusSheet
-            visible={plusSheetVisible}
-            onAddPhotos={handleAddPhotos}
-            onClose={handleClosePlusMenu}
-            onSelectPrompt={handleSelectPlusPrompt}
-          />
+            </>
+          )}
         </SafeAreaView>
       )}
     </DrawerShell>

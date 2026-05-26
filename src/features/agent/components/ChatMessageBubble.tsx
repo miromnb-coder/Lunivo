@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
 import type { ChatMessage } from './ChatMessageList';
@@ -11,6 +11,22 @@ function cleanMessageText(content: string) {
   return content.replace(/\*\*(.*?)\*\*/g, '$1').trim();
 }
 
+function SelectableMessageText({ content, style }: { content: string; style: object }) {
+  return (
+    <TextInput
+      allowFontScaling={false}
+      contextMenuHidden={false}
+      multiline
+      onChangeText={() => {}}
+      scrollEnabled={false}
+      selectTextOnFocus={false}
+      showSoftInputOnFocus={false}
+      style={[styles.selectableTextInput, style]}
+      value={content}
+    />
+  );
+}
+
 export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const isUser = message.role === 'user';
 
@@ -18,9 +34,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     return (
       <View style={[styles.row, styles.userRow]}>
         <View style={[styles.bubble, styles.userBubble]}>
-          <Text allowFontScaling={false} selectable={true} style={[styles.messageText, styles.userText]}>
-            {message.content}
-          </Text>
+          <SelectableMessageText content={message.content} style={styles.userText} />
         </View>
       </View>
     );
@@ -36,9 +50,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         <Text allowFontScaling={false} style={styles.assistantLabel}>
           Lunivo
         </Text>
-        <Text allowFontScaling={false} selectable={true} style={styles.assistantText}>
-          {cleanMessageText(message.content)}
-        </Text>
+        <SelectableMessageText content={cleanMessageText(message.content)} style={styles.assistantText} />
       </View>
     </View>
   );
@@ -84,14 +96,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -0.08,
   },
-  messageText: {
-    fontSize: 16.5,
-    lineHeight: 22,
-    letterSpacing: -0.18,
+  selectableTextInput: {
+    minWidth: 1,
+    padding: 0,
+    margin: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    textAlignVertical: 'top',
   },
   userText: {
     color: agentTheme.colors.text,
+    fontSize: 16.5,
+    lineHeight: 22,
     fontWeight: '500',
+    letterSpacing: -0.18,
   },
   assistantText: {
     color: agentTheme.colors.text,

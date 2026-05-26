@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { AgentChatMessage } from '../types/agent';
 import { ChatMessageBubble } from './ChatMessageBubble';
@@ -62,11 +62,14 @@ export function ChatMessageList({
           paddingTop: topInset,
         },
       ]}
-      keyboardDismissMode="none"
+      keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={Keyboard.dismiss}
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
     >
+      <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.emptyTapArea} />
+
       <View style={styles.messagesStack}>
         {messages.map((message) => (
           <ChatMessageBubble key={message.id} message={message} />
@@ -84,8 +87,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
     paddingHorizontal: 18,
+  },
+  emptyTapArea: {
+    minHeight: 1,
+    flexGrow: 1,
+    width: '100%',
   },
   messagesStack: {
     width: '100%',

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import type { NativeSyntheticEvent, StyleProp, TextInputSelectionChangeEventData, TextStyle } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
 import type { ChatMessage } from './ChatMessageList';
@@ -7,19 +9,44 @@ type ChatMessageBubbleProps = {
   message: ChatMessage;
 };
 
+type TextSelection = {
+  end: number;
+  start: number;
+};
+
 function cleanMessageText(content: string) {
   return content.replace(/\*\*(.*?)\*\*/g, '$1').trim();
 }
 
-function SelectableMessageText({ content, style }: { content: string; style: object }) {
+function SelectableMessageText({ content, style }: { content: string; style: StyleProp<TextStyle> }) {
+  const [selection, setSelection] = useState<TextSelection | undefined>();
+
+  useEffect(() => {
+    setSelection(undefined);
+  }, [content]);
+
+  function selectWholeMessage() {
+    requestAnimationFrame(() => {
+      setSelection({ start: 0, end: content.length });
+    });
+  }
+
+  function handleSelectionChange(event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) {
+    setSelection(event.nativeEvent.selection);
+  }
+
   return (
     <TextInput
       allowFontScaling={false}
       caretHidden={true}
       contextMenuHidden={false}
       multiline
+      onBlur={() => setSelection(undefined)}
       onChangeText={() => {}}
+      onFocus={selectWholeMessage}
+      onSelectionChange={handleSelectionChange}
       scrollEnabled={false}
+      selection={selection}
       selectTextOnFocus={true}
       showSoftInputOnFocus={false}
       style={[styles.selectableTextInput, style]}

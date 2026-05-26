@@ -103,28 +103,28 @@ export function SideMenu({
 }: SideMenuProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text allowFontScaling={false} style={styles.logo}>
+          Lunivo
+        </Text>
+
+        <View style={styles.headerActions}>
+          <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
+            <Search color={ICON_COLOR} size={31} strokeWidth={1.85} />
+          </Pressable>
+          <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
+            <Text allowFontScaling={false} style={styles.avatarText}>
+              {avatarInitials}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       <ScrollView
         bounces={false}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text allowFontScaling={false} style={styles.logo}>
-            Lunivo
-          </Text>
-
-          <View style={styles.headerActions}>
-            <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
-              <Search color={ICON_COLOR} size={31} strokeWidth={1.85} />
-            </Pressable>
-            <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
-              <Text allowFontScaling={false} style={styles.avatarText}>
-                {avatarInitials}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
           <MenuRow icon={FourSquaresIcon} label="Library" />
@@ -161,17 +161,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: agentTheme.colors.background,
   },
-  scrollContent: {
-    paddingHorizontal: 34,
-    paddingTop: 0,
-    paddingBottom: 42,
-  },
   header: {
     minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    paddingHorizontal: 34,
+    backgroundColor: agentTheme.colors.background,
+  },
+  scrollContent: {
+    paddingHorizontal: 34,
+    paddingTop: 30,
+    paddingBottom: 42,
   },
   logo: {
     color: agentTheme.colors.text,

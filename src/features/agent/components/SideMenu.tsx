@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 0,
+    top: 22,
     left: 0,
     right: 0,
     zIndex: 20,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 34,
-    paddingTop: 94,
+    paddingTop: 116,
     paddingBottom: 42,
   },
   logo: {

@@ -1,23 +1,11 @@
 import { supabase } from '../../../lib/supabase';
-import type { ChatMessage } from '../components/ChatMessageList';
-
-type AgentModelMode = 'auto' | 'fast' | 'smart';
-
-type StreamMessageToAgentInput = {
-  conversationId?: string | null;
-  messages: ChatMessage[];
-  modelMode?: AgentModelMode;
-  onDelta: (delta: string) => void;
-  signal?: AbortSignal;
-};
+import { agentConfig } from '../constants/agentConfig';
+import type { AgentResponse, StreamAgentMessageInput } from '../types/agent';
 
 type StreamEvent = {
   data: string;
   eventName: string;
 };
-
-const LUNIVO_STREAM_FUNCTION_NAME = 'lunivo-chat-stream';
-const LUNIVO_STREAM_MODEL_MODE: AgentModelMode = 'fast';
 
 function getSupabaseConfig() {
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
@@ -229,20 +217,21 @@ function readStreamWithXHR({
 export async function streamMessageToAgent({
   conversationId,
   messages,
+  modelMode = agentConfig.defaultModelMode,
   onDelta,
   signal,
-}: StreamMessageToAgentInput) {
+}: StreamAgentMessageInput): Promise<AgentResponse> {
   const { supabasePublishableKey, supabaseUrl } = getSupabaseConfig();
   const accessToken = await getAccessToken();
   const body = JSON.stringify({
     conversationId,
-    modelMode: LUNIVO_STREAM_MODEL_MODE,
+    modelMode,
     messages: messages.map((message) => ({
       role: message.role,
       content: message.content,
     })),
   });
-  const url = `${supabaseUrl}/functions/v1/${LUNIVO_STREAM_FUNCTION_NAME}`;
+  const url = `${supabaseUrl}/functions/v1/${agentConfig.streamFunctionName}`;
   const answer = await readStreamWithXHR({
     accessToken,
     body,
@@ -254,8 +243,8 @@ export async function streamMessageToAgent({
 
   return {
     answer,
-    model: 'gpt-5-nano',
-    modelMode: LUNIVO_STREAM_MODEL_MODE,
+    model: agentConfig.defaultModel,
+    modelMode,
     provider: 'openai',
   };
 }

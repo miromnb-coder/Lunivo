@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
-import type { LunivoAttachment } from '../types/attachments';
+import type { LunivoAttachment } from '../types/attachment';
 
 const COMPOSER_ICON_COLOR = 'rgba(15,17,21,0.84)';
 const DISABLED_ICON_COLOR = 'rgba(110,113,124,0.42)';

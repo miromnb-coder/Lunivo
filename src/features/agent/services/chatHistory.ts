@@ -1,11 +1,6 @@
 import { supabase } from '../../../lib/supabase';
-import type { ChatMessage } from '../components/ChatMessageList';
-
-export type ConversationSummary = {
-  id: string;
-  title: string;
-  updatedAt: string;
-};
+import type { AgentChatMessage } from '../types/agent';
+import type { ConversationSummary } from '../types/conversation';
 
 type ConversationRow = {
   id: string;
@@ -16,7 +11,7 @@ type ConversationRow = {
 
 type MessageRow = {
   id: string;
-  role: ChatMessage['role'];
+  role: AgentChatMessage['role'];
   content: string;
 };
 
@@ -100,7 +95,7 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
   }));
 }
 
-export async function fetchConversationMessages(conversationId: string): Promise<ChatMessage[]> {
+export async function fetchConversationMessages(conversationId: string): Promise<AgentChatMessage[]> {
   if (!supabase) {
     return [];
   }

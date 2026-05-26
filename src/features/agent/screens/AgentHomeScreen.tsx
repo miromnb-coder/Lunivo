@@ -13,85 +13,34 @@ import {
 import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
-import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList';
+import { ChatMessageList } from '../components/ChatMessageList';
 import { DrawerShell } from '../components/DrawerShell';
 import { HeroMessage } from '../components/HeroMessage';
 import { LunivoPlusSheet } from '../components/LunivoPlusSheet';
 import { QuickActions } from '../components/QuickActions';
+import { agentLayoutConfig } from '../constants/agentConfig';
 import { agentTheme } from '../constants/agentTheme';
-import {
-  fetchConversationMessages,
-  fetchConversations,
-  getCurrentUserInitials,
-  type ConversationSummary,
-} from '../services/chatHistory';
-import {
-  getOrCreateConversation,
-  saveAssistantMessage,
-  saveUserMessage,
-  touchConversationUpdatedAt,
-} from '../services/conversationStorage';
-import { sendMessageToAgent } from '../services/sendMessageToAgent';
-import { streamMessageToAgent } from '../services/streamMessageToAgent';
-import type { LunivoAttachment } from '../types/attachments';
+import { useAgentChat } from '../hooks/useAgentChat';
+import { useAgentConversations } from '../hooks/useAgentConversations';
+import type { LunivoAttachment } from '../types/attachment';
 
-const CLOSED_COMPOSER_BOTTOM = 38;
-const KEYBOARD_GAP = 8;
-const CLOSED_MESSAGE_BOTTOM_GAP = 260;
-const KEYBOARD_MESSAGE_BOTTOM_GAP = 34;
-const MESSAGE_LIST_TOP_INSET = 28;
-const DEFAULT_COMPOSER_HEIGHT = 66;
-const CHAT_MODEL_MODE = 'fast';
-const CHAT_MODEL = 'gpt-5-nano';
-const ATTACHMENT_NOTE = 'Photos are attached in the composer preview, but image analysis is not enabled yet.';
-
-function createMessageId(role: ChatMessage['role']) {
-  return `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function createAgentErrorMessage(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-
-  return `I could not connect to Lunivo AI right now.\n\n${message}`;
-}
+const CLOSED_COMPOSER_BOTTOM = agentLayoutConfig.closedComposerBottom;
+const KEYBOARD_GAP = agentLayoutConfig.keyboardGap;
+const CLOSED_MESSAGE_BOTTOM_GAP = agentLayoutConfig.closedMessageBottomGap;
+const KEYBOARD_MESSAGE_BOTTOM_GAP = agentLayoutConfig.keyboardMessageBottomGap;
+const MESSAGE_LIST_TOP_INSET = agentLayoutConfig.messageListTopInset;
+const DEFAULT_COMPOSER_HEIGHT = agentLayoutConfig.defaultComposerHeight;
 
 export function AgentHomeScreen() {
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [avatarInitials, setAvatarInitials] = useState('MS');
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isThinking, setIsThinking] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [plusSheetVisible, setPlusSheetVisible] = useState(false);
-  const [selectedAttachments, setSelectedAttachments] = useState<LunivoAttachment[]>([]);
-  const [streamScrollKey, setStreamScrollKey] = useState(0);
-  const sendRunRef = useRef(0);
-  const streamAbortControllerRef = useRef<AbortController | null>(null);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
-  const hasMessages = messages.length > 0 || isThinking;
-  const messageListBottomInset = keyboardOpen
-    ? keyboardHeight + KEYBOARD_GAP + composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
-    : CLOSED_MESSAGE_BOTTOM_GAP;
-
-  const loadMenuData = useCallback(async () => {
-    try {
-      const [nextInitials, nextConversations] = await Promise.all([
-        getCurrentUserInitials(),
-        fetchConversations(),
-      ]);
-
-      setAvatarInitials(nextInitials);
-      setConversations(nextConversations);
-    } catch {
-      // Keep the menu usable even if history/profile loading fails.
-    }
-  }, []);
+  const { avatarInitials, conversations, refreshConversations } = useAgentConversations();
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -112,6 +61,28 @@ export function AgentHomeScreen() {
     },
     [heroOpacity, heroTranslateY],
   );
+
+  const closeActiveOverlays = useCallback(() => {
+    Keyboard.dismiss();
+    setPlusSheetVisible(false);
+  }, []);
+
+  const hidePlusSheet = useCallback(() => {
+    setPlusSheetVisible(false);
+  }, []);
+
+  const chat = useAgentChat({
+    onBeforeChatReset: closeActiveOverlays,
+    onBeforeConversationSelect: closeActiveOverlays,
+    onBeforeSend: hidePlusSheet,
+    onConversationChanged: refreshConversations,
+    onHeroVisibilityChange: animateHero,
+  });
+
+  const hasMessages = chat.hasMessages;
+  const messageListBottomInset = keyboardOpen
+    ? keyboardHeight + KEYBOARD_GAP + composerHeight + KEYBOARD_MESSAGE_BOTTOM_GAP
+    : CLOSED_MESSAGE_BOTTOM_GAP;
 
   const closeComposerPosition = useCallback(
     (duration = 220) => {
@@ -150,20 +121,11 @@ export function AgentHomeScreen() {
   }
 
   function handleAddPhotos(photos: LunivoAttachment[]) {
-    setSelectedAttachments((currentAttachments) => {
-      const existingIds = new Set(currentAttachments.map((attachment) => attachment.id));
-      const nextPhotos = photos.filter((photo) => !existingIds.has(photo.id));
-      return [...currentAttachments, ...nextPhotos].slice(0, 5);
-    });
-  }
-
-  function handleRemoveAttachment(attachmentId: string) {
-    lunivoHaptics.selectConversation();
-    setSelectedAttachments((currentAttachments) => currentAttachments.filter((attachment) => attachment.id !== attachmentId));
+    chat.addAttachments(photos);
   }
 
   function handleSelectPlusPrompt(prompt: string) {
-    setMessage((currentMessage) => {
+    chat.setMessage((currentMessage) => {
       if (!currentMessage.trim()) {
         return prompt;
       }
@@ -171,245 +133,6 @@ export function AgentHomeScreen() {
       return `${prompt}${currentMessage}`;
     });
   }
-
-  const handleNewChat = useCallback(() => {
-    sendRunRef.current += 1;
-    streamAbortControllerRef.current?.abort();
-    streamAbortControllerRef.current = null;
-    Keyboard.dismiss();
-    setPlusSheetVisible(false);
-    setSelectedAttachments([]);
-    setActiveConversationId(null);
-    setMessage('');
-    setMessages([]);
-    setIsThinking(false);
-    setStreamScrollKey(0);
-    animateHero(true, 180);
-  }, [animateHero]);
-
-  const handleSelectConversation = useCallback(
-    async (conversationId: string) => {
-      sendRunRef.current += 1;
-      streamAbortControllerRef.current?.abort();
-      streamAbortControllerRef.current = null;
-      Keyboard.dismiss();
-      setPlusSheetVisible(false);
-      setSelectedAttachments([]);
-      setActiveConversationId(conversationId);
-      setMessage('');
-      setIsThinking(false);
-      animateHero(false, 160);
-
-      try {
-        const nextMessages = await fetchConversationMessages(conversationId);
-        setMessages(nextMessages);
-      } catch (error) {
-        lunivoHaptics.error();
-        setMessages([
-          {
-            id: createMessageId('assistant'),
-            role: 'assistant',
-            content: createAgentErrorMessage(error),
-          },
-        ]);
-      }
-    },
-    [animateHero],
-  );
-
-  async function handleSend() {
-    const trimmedMessage = message.trim();
-
-    if (!trimmedMessage || isThinking) {
-      return;
-    }
-
-    setPlusSheetVisible(false);
-    const attachmentsForMessage = selectedAttachments;
-    const messageForAI = attachmentsForMessage.length > 0
-      ? `${trimmedMessage}\n\n${ATTACHMENT_NOTE}`
-      : trimmedMessage;
-    lunivoHaptics.sendMessage();
-    streamAbortControllerRef.current?.abort();
-
-    const userMessage: ChatMessage = {
-      id: createMessageId('user'),
-      role: 'user',
-      content: trimmedMessage,
-    };
-
-    const assistantMessageId = createMessageId('assistant');
-    const assistantMessage: ChatMessage = {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '',
-    };
-
-    const nextMessages = [...messages, userMessage];
-    const messagesForAI = [...messages, { ...userMessage, content: messageForAI }];
-    const runId = sendRunRef.current + 1;
-    const abortController = new AbortController();
-    let streamedAnswer = '';
-    let savedConversationId = activeConversationId;
-    let canSaveConversation = false;
-
-    sendRunRef.current = runId;
-    streamAbortControllerRef.current = abortController;
-
-    setMessages([...nextMessages, assistantMessage]);
-    setMessage('');
-    setSelectedAttachments([]);
-    setIsThinking(true);
-    setStreamScrollKey((currentKey) => currentKey + 1);
-    animateHero(false, 160);
-
-    try {
-      try {
-        savedConversationId = await getOrCreateConversation({
-          conversationId: activeConversationId,
-          firstMessage: trimmedMessage,
-          modelMode: CHAT_MODEL_MODE,
-        });
-
-        if (sendRunRef.current !== runId) {
-          return;
-        }
-
-        canSaveConversation = true;
-        setActiveConversationId(savedConversationId);
-        await saveUserMessage({
-          content: trimmedMessage,
-          conversationId: savedConversationId,
-          model: CHAT_MODEL,
-        });
-        loadMenuData();
-      } catch {
-        // AI should still work even if saving the conversation fails.
-        canSaveConversation = false;
-      }
-
-      await streamMessageToAgent({
-        conversationId: savedConversationId,
-        messages: messagesForAI,
-        signal: abortController.signal,
-        onDelta: (delta) => {
-          if (sendRunRef.current !== runId) {
-            return;
-          }
-
-          streamedAnswer += delta;
-          setIsThinking(false);
-          setMessages((currentMessages) =>
-            currentMessages.map((currentMessage) =>
-              currentMessage.id === assistantMessageId
-                ? { ...currentMessage, content: `${currentMessage.content}${delta}` }
-                : currentMessage,
-            ),
-          );
-          setStreamScrollKey((currentKey) => currentKey + 1);
-        },
-      });
-
-      if (sendRunRef.current !== runId) {
-        return;
-      }
-
-      if (!streamedAnswer.trim()) {
-        throw new Error('Lunivo stream returned an empty answer.');
-      }
-
-      lunivoHaptics.messageComplete();
-
-      if (canSaveConversation && savedConversationId) {
-        try {
-          await saveAssistantMessage({
-            content: streamedAnswer,
-            conversationId: savedConversationId,
-            model: CHAT_MODEL,
-          });
-          await touchConversationUpdatedAt(savedConversationId);
-          loadMenuData();
-        } catch {
-          // Keep the finished AI answer visible even if history saving fails.
-        }
-      }
-    } catch (streamError) {
-      if (sendRunRef.current !== runId || abortController.signal.aborted) {
-        return;
-      }
-
-      try {
-        const { answer, conversationId } = await sendMessageToAgent({
-          conversationId: savedConversationId,
-          messages: messagesForAI,
-          modelMode: CHAT_MODEL_MODE,
-        });
-
-        if (sendRunRef.current !== runId) {
-          return;
-        }
-
-        if (conversationId) {
-          savedConversationId = conversationId;
-          setActiveConversationId(conversationId);
-        }
-
-        setMessages((currentMessages) =>
-          currentMessages.map((currentMessage) =>
-            currentMessage.id === assistantMessageId
-              ? { ...currentMessage, content: answer }
-              : currentMessage,
-          ),
-        );
-        setStreamScrollKey((currentKey) => currentKey + 1);
-        lunivoHaptics.messageComplete();
-
-        if (canSaveConversation && savedConversationId) {
-          try {
-            await saveAssistantMessage({
-              content: answer,
-              conversationId: savedConversationId,
-              model: CHAT_MODEL,
-            });
-            await touchConversationUpdatedAt(savedConversationId);
-          } catch {
-            // Keep the fallback answer visible even if history saving fails.
-          }
-        }
-
-        loadMenuData();
-      } catch (fallbackError) {
-        if (sendRunRef.current !== runId) {
-          return;
-        }
-
-        lunivoHaptics.error();
-        setMessages((currentMessages) =>
-          currentMessages.map((currentMessage) =>
-            currentMessage.id === assistantMessageId
-              ? { ...currentMessage, content: createAgentErrorMessage(fallbackError) }
-              : currentMessage,
-          ),
-        );
-      }
-    } finally {
-      if (sendRunRef.current === runId) {
-        streamAbortControllerRef.current = null;
-        setIsThinking(false);
-      }
-    }
-  }
-
-  useEffect(() => {
-    loadMenuData();
-  }, [loadMenuData]);
-
-  useEffect(() => {
-    return () => {
-      sendRunRef.current += 1;
-      streamAbortControllerRef.current?.abort();
-    };
-  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -460,8 +183,8 @@ export function AgentHomeScreen() {
       avatarInitials={avatarInitials}
       conversations={conversations}
       gesturesEnabled={!plusSheetVisible}
-      onNewChat={handleNewChat}
-      onSelectConversation={handleSelectConversation}
+      onNewChat={chat.startNewChat}
+      onSelectConversation={chat.selectConversation}
     >
       {({ openDrawer }) => (
         <SafeAreaView style={styles.screen}>
@@ -472,10 +195,10 @@ export function AgentHomeScreen() {
 
             {hasMessages ? (
               <ChatMessageList
-                messages={messages}
+                messages={chat.messages}
                 bottomInset={messageListBottomInset}
-                scrollKey={streamScrollKey}
-                thinking={isThinking}
+                scrollKey={chat.streamScrollKey}
+                thinking={chat.isThinking}
                 topInset={MESSAGE_LIST_TOP_INSET}
               />
             ) : null}
@@ -500,14 +223,14 @@ export function AgentHomeScreen() {
             style={[styles.composerWrap, { bottom: composerBottom }]}
           >
             <ChatComposer
-              attachments={selectedAttachments}
-              value={message}
+              attachments={chat.selectedAttachments}
+              value={chat.message}
               onBlur={handleComposerBlur}
-              onChangeText={setMessage}
+              onChangeText={chat.setMessage}
               onHeightChange={setComposerHeight}
               onOpenPlusMenu={handleOpenPlusMenu}
-              onRemoveAttachment={handleRemoveAttachment}
-              onSend={handleSend}
+              onRemoveAttachment={chat.removeAttachment}
+              onSend={chat.sendMessage}
             />
           </Animated.View>
 

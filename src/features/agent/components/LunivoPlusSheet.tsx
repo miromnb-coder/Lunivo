@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { agentTheme } from '../constants/agentTheme';
-import type { LunivoAttachment } from '../types/attachments';
+import type { LunivoAttachment } from '../types/attachment';
 
 type LunivoPlusSheetProps = {
   visible: boolean;

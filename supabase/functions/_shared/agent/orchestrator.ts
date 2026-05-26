@@ -31,8 +31,6 @@ type OpenAIResponsePayload = {
 type OpenAIStreamChunk = {
   type?: string;
   delta?: unknown;
-  text?: unknown;
-  output_text?: unknown;
   error?: {
     message?: string;
   };
@@ -122,16 +120,8 @@ function getStreamDelta(payload: OpenAIStreamChunk) {
     return payload.delta;
   }
 
-  if (typeof payload.delta === 'string') {
+  if (!payload.type && typeof payload.delta === 'string') {
     return payload.delta;
-  }
-
-  if (typeof payload.text === 'string') {
-    return payload.text;
-  }
-
-  if (typeof payload.output_text === 'string') {
-    return payload.output_text;
   }
 
   return '';

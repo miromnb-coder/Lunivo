@@ -1,6 +1,8 @@
+import * as Clipboard from 'expo-clipboard';
+import { Copy } from 'lucide-react-native';
 import { marked } from 'marked';
-import { Fragment } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { agentTheme } from '../constants/agentTheme';
 import type { ChatMessage } from './ChatMessageList';
@@ -100,9 +102,16 @@ function parseMarkdown(content: string): MarkdownBlock[] {
   return blocks;
 }
 
+function formatActionTime(date: Date) {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `Tänään ${hours}.${minutes}`;
+}
+
 function InlineText({ parts }: { parts: InlinePart[] }) {
   return (
-    <Text allowFontScaling={false} style={styles.assistantText}>
+    <Text allowFontScaling={false} selectable style={styles.assistantText}>
       {parts.map((part, index) => (
         <Text key={`${part.text}-${index}`} style={part.bold ? styles.boldText : undefined}>
           {part.text}
@@ -123,7 +132,7 @@ function AssistantMarkdown({ content }: { content: string }) {
             <View key={`list-${blockIndex}`} style={styles.listBlock}>
               {block.items.map((item, itemIndex) => (
                 <View key={`list-${blockIndex}-${itemIndex}`} style={styles.listItem}>
-                  <Text allowFontScaling={false} style={styles.listMarker}>
+                  <Text allowFontScaling={false} selectable style={styles.listMarker}>
                     {block.ordered ? `${itemIndex + 1}.` : '•'}
                   </Text>
                   <View style={styles.listItemContent}>
@@ -145,18 +154,75 @@ function AssistantMarkdown({ content }: { content: string }) {
   );
 }
 
+function UserMessageActionOverlay({
+  content,
+  onClose,
+  visible,
+}: {
+  content: string;
+  onClose: () => void;
+  visible: boolean;
+}) {
+  const [openedAt] = useState(() => new Date());
+
+  async function copyMessage() {
+    await Clipboard.setStringAsync(content);
+    onClose();
+  }
+
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <Pressable style={styles.overlayBackdrop} onPress={onClose}>
+        <View style={styles.overlayContent} pointerEvents="box-none">
+          <View style={styles.previewBubble}>
+            <Text allowFontScaling={false} style={styles.previewText}>
+              {content}
+            </Text>
+          </View>
+
+          <View style={styles.actionCard}>
+            <Text allowFontScaling={false} style={styles.actionTimeText}>
+              {formatActionTime(openedAt)}
+            </Text>
+            <View style={styles.actionDivider} />
+            <Pressable onPress={copyMessage} style={({ pressed }) => [styles.copyAction, pressed && styles.copyActionPressed]}>
+              <Text allowFontScaling={false} style={styles.copyActionText}>
+                Kopioi
+              </Text>
+              <Copy color={agentTheme.colors.text} size={22} strokeWidth={1.9} />
+            </Pressable>
+          </View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
+  const [actionOverlayVisible, setActionOverlayVisible] = useState(false);
   const isUser = message.role === 'user';
 
   if (isUser) {
     return (
-      <View style={[styles.row, styles.userRow]}>
-        <View style={[styles.bubble, styles.userBubble]}>
-          <Text allowFontScaling={false} style={[styles.messageText, styles.userText]}>
-            {message.content}
-          </Text>
+      <>
+        <View style={[styles.row, styles.userRow]}>
+          <Pressable
+            delayLongPress={220}
+            onLongPress={() => setActionOverlayVisible(true)}
+            style={({ pressed }) => [styles.bubble, styles.userBubble, pressed && styles.userBubblePressed]}
+          >
+            <Text allowFontScaling={false} style={[styles.messageText, styles.userText]}>
+              {message.content}
+            </Text>
+          </Pressable>
         </View>
-      </View>
+
+        <UserMessageActionOverlay
+          content={message.content}
+          onClose={() => setActionOverlayVisible(false)}
+          visible={actionOverlayVisible}
+        />
+      </>
     );
   }
 
@@ -203,6 +269,9 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
     elevation: 3,
+  },
+  userBubblePressed: {
+    opacity: 0.78,
   },
   assistantBubble: {
     paddingHorizontal: 2,
@@ -258,5 +327,77 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: '800',
+  },
+  overlayBackdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+    backgroundColor: 'rgba(31,36,48,0.18)',
+  },
+  overlayContent: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  previewBubble: {
+    width: '86%',
+    maxWidth: 390,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    backgroundColor: '#fbfbfa',
+    shadowColor: '#5b5f6b',
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
+  },
+  previewText: {
+    color: agentTheme.colors.text,
+    fontSize: 20,
+    lineHeight: 30,
+    fontWeight: '500',
+    letterSpacing: -0.22,
+  },
+  actionCard: {
+    width: '76%',
+    maxWidth: 340,
+    marginTop: 14,
+    borderRadius: 15,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(251,251,250,0.94)',
+    borderWidth: 1,
+    borderColor: 'rgba(17,24,39,0.075)',
+  },
+  actionTimeText: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 9,
+    color: agentTheme.colors.mutedText,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
+  actionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(17,24,39,0.14)',
+  },
+  copyAction: {
+    minHeight: 54,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  copyActionPressed: {
+    backgroundColor: 'rgba(17,24,39,0.04)',
+  },
+  copyActionText: {
+    color: agentTheme.colors.text,
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '400',
+    letterSpacing: -0.22,
   },
 });

@@ -8,7 +8,7 @@ type ChatMessageBubbleProps = {
   message: ChatMessage;
 };
 
-const MESSAGE_SELECTION_COLOR = 'rgba(177,162,155,0.45)';
+const MESSAGE_SELECTION_COLOR = 'rgba(177,162,155,0.65)';
 
 function cleanMessageText(content: string) {
   return content.replace(/\*\*(.*?)\*\*/g, '$1').trim();

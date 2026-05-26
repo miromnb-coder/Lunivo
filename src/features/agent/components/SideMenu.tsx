@@ -11,7 +11,7 @@ const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
 const DRAWER_HEADER_TOP = 34;
 const DRAWER_HEADER_HEIGHT = 82;
-const DRAWER_CONTENT_GAP = 26;
+const DRAWER_CONTENT_GAP = 46;
 
 type MenuIconProps = {
   color?: string;
@@ -35,29 +35,43 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
-function FourSquaresIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: MenuIconProps) {
-  const gap = size * 0.18;
-  const squareSize = (size - gap) / 2;
-  const borderRadius = squareSize * 0.22;
+function LibraryBooksIcon({ color = ICON_COLOR, size = 31, strokeWidth = 2.05 }: MenuIconProps) {
+  const bookWidth = size * 0.23;
+  const bookHeight = size * 0.72;
+  const borderRadius = bookWidth * 0.46;
 
   return (
-    <View style={{ width: size, height: size, justifyContent: 'space-between' }}>
-      {[0, 1].map((row) => (
-        <View key={row} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {[0, 1].map((column) => (
-            <View
-              key={column}
-              style={{
-                width: squareSize,
-                height: squareSize,
-                borderRadius,
-                borderWidth: strokeWidth,
-                borderColor: color,
-              }}
-            />
-          ))}
-        </View>
-      ))}
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: size * 0.07 }}>
+        <View
+          style={{
+            width: bookWidth,
+            height: bookHeight,
+            borderRadius,
+            borderWidth: strokeWidth,
+            borderColor: color,
+          }}
+        />
+        <View
+          style={{
+            width: bookWidth,
+            height: bookHeight,
+            borderRadius,
+            borderWidth: strokeWidth,
+            borderColor: color,
+          }}
+        />
+        <View
+          style={{
+            width: bookWidth,
+            height: bookHeight,
+            borderRadius,
+            borderWidth: strokeWidth,
+            borderColor: color,
+            transform: [{ rotate: '-7deg' }],
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -114,7 +128,7 @@ export function SideMenu({
       >
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
-          <MenuRow icon={FourSquaresIcon} label="Library" />
+          <MenuRow icon={LibraryBooksIcon} label="Library" />
         </View>
 
         <SectionLabel>SPACES</SectionLabel>

@@ -8,6 +8,8 @@ type ChatMessageBubbleProps = {
   message: ChatMessage;
 };
 
+const MESSAGE_SELECTION_COLOR = 'rgba(177,162,155,0.45)';
+
 function cleanMessageText(content: string) {
   return content.replace(/\*\*(.*?)\*\*/g, '$1').trim();
 }
@@ -20,6 +22,7 @@ function SelectableMessageText({ content, style }: { content: string; style: Sty
       multiline={true}
       readOnly={true}
       scrollEnabled={false}
+      selectionColor={MESSAGE_SELECTION_COLOR}
       style={[styles.selectableTextInput, style]}
       value={content}
     />

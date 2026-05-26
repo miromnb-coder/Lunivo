@@ -1,27 +1,11 @@
 import { supabase } from '../../../lib/supabase';
-import type { ChatMessage } from '../components/ChatMessageList';
+import { agentConfig } from '../constants/agentConfig';
+import type { AgentResponse, SendAgentMessageInput } from '../types/agent';
 
-type AgentModelMode = 'auto' | 'fast' | 'smart';
-
-type LunivoChatResponse = {
-  answer?: string;
-  conversationId?: string;
+type LunivoChatResponse = AgentResponse & {
   error?: string;
   detail?: string;
-  model?: string;
-  modelMode?: AgentModelMode;
-  persistenceError?: string | null;
-  provider?: string;
 };
-
-type SendMessageToAgentInput = {
-  conversationId?: string | null;
-  messages: ChatMessage[];
-  modelMode?: AgentModelMode;
-};
-
-const LUNIVO_CHAT_FUNCTION_NAME = 'lunivo-chat-v2';
-const LUNIVO_CHAT_MODEL_MODE: AgentModelMode = 'fast';
 
 async function getFunctionErrorMessage(error: unknown) {
   const fallback = error instanceof Error ? error.message : 'Edge Function request failed.';
@@ -56,15 +40,16 @@ async function getFunctionErrorMessage(error: unknown) {
 export async function sendMessageToAgent({
   conversationId,
   messages,
-}: SendMessageToAgentInput) {
+  modelMode = agentConfig.defaultModelMode,
+}: SendAgentMessageInput): Promise<AgentResponse> {
   if (!supabase) {
     throw new Error('Supabase is not configured. Check your Expo environment variables.');
   }
 
-  const { data, error } = await supabase.functions.invoke<LunivoChatResponse>(LUNIVO_CHAT_FUNCTION_NAME, {
+  const { data, error } = await supabase.functions.invoke<LunivoChatResponse>(agentConfig.chatFunctionName, {
     body: {
       conversationId,
-      modelMode: LUNIVO_CHAT_MODEL_MODE,
+      modelMode,
       messages: messages.map((message) => ({
         role: message.role,
         content: message.content,

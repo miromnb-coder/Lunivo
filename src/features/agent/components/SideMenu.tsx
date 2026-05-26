@@ -10,11 +10,13 @@ const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: '
 const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
 
-type MenuIcon = ComponentType<{
+type MenuIconProps = {
   color?: string;
   size?: number;
   strokeWidth?: number;
-}>;
+};
+
+type MenuIcon = ComponentType<MenuIconProps>;
 
 type MenuRowProps = {
   icon: MenuIcon;
@@ -30,32 +32,28 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
-function FourSquaresIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: Parameters<MenuIcon>[0]) {
-  const squareSize = size * 0.31;
+function FourSquaresIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: MenuIconProps) {
+  const gap = size * 0.18;
+  const squareSize = (size - gap) / 2;
   const borderRadius = squareSize * 0.22;
 
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'space-between',
-        justifyContent: 'space-between',
-      }}
-    >
-      {[0, 1, 2, 3].map((index) => (
-        <View
-          key={index}
-          style={{
-            width: squareSize,
-            height: squareSize,
-            borderRadius,
-            borderWidth: strokeWidth,
-            borderColor: color,
-          }}
-        />
+    <View style={{ width: size, height: size, justifyContent: 'space-between' }}>
+      {[0, 1].map((row) => (
+        <View key={row} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {[0, 1].map((column) => (
+            <View
+              key={column}
+              style={{
+                width: squareSize,
+                height: squareSize,
+                borderRadius,
+                borderWidth: strokeWidth,
+                borderColor: color,
+              }}
+            />
+          ))}
+        </View>
       ))}
     </View>
   );

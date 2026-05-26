@@ -33,6 +33,7 @@ type SideMenuProps = {
   avatarInitials: string;
   conversations: ConversationSummary[];
   onNewChat: () => void;
+  onOpenLibrary: () => void;
   onSelectConversation: (conversationId: string) => void;
 };
 
@@ -113,6 +114,7 @@ export function SideMenu({
   avatarInitials,
   conversations,
   onNewChat,
+  onOpenLibrary,
   onSelectConversation,
 }: SideMenuProps) {
   return (
@@ -125,7 +127,7 @@ export function SideMenu({
       >
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
-          <MenuRow icon={LibraryBooksIcon} iconSize={34} label="Library" />
+          <MenuRow icon={LibraryBooksIcon} iconSize={34} label="Library" onPress={onOpenLibrary} />
         </View>
 
         <SectionLabel>SPACES</SectionLabel>

@@ -2,6 +2,7 @@ import {
   fetchConversationMessages as fetchStoredConversationMessages,
   fetchConversations as fetchStoredConversations,
   getCurrentUserInitials as getStoredCurrentUserInitials,
+  getCurrentUserProfile as getStoredCurrentUserProfile,
 } from './chatHistory';
 import {
   getOrCreateConversation as getOrCreateStoredConversation,
@@ -26,6 +27,10 @@ export type SaveConversationMessageInput = {
 
 export async function getCurrentUserInitials() {
   return getStoredCurrentUserInitials();
+}
+
+export async function getCurrentUserProfile() {
+  return getStoredCurrentUserProfile();
 }
 
 export async function fetchConversations(): Promise<ConversationSummary[]> {

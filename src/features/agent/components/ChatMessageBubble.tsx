@@ -18,7 +18,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     return (
       <View style={[styles.row, styles.userRow]}>
         <View style={[styles.bubble, styles.userBubble]}>
-          <Text allowFontScaling={false} selectable style={[styles.messageText, styles.userText]}>
+          <Text allowFontScaling={false} selectable={true} style={[styles.messageText, styles.userText]}>
             {message.content}
           </Text>
         </View>
@@ -36,7 +36,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         <Text allowFontScaling={false} style={styles.assistantLabel}>
           Lunivo
         </Text>
-        <Text allowFontScaling={false} selectable style={styles.assistantText}>
+        <Text allowFontScaling={false} selectable={true} style={styles.assistantText}>
           {cleanMessageText(message.content)}
         </Text>
       </View>

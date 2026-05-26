@@ -9,6 +9,9 @@ import type { ConversationSummary } from '../types/conversation';
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
+const DRAWER_HEADER_TOP = 34;
+const DRAWER_HEADER_HEIGHT = 82;
+const DRAWER_CONTENT_GAP = 26;
 
 type MenuIconProps = {
   color?: string;
@@ -164,12 +167,12 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 22,
+    top: DRAWER_HEADER_TOP,
     left: 0,
     right: 0,
     zIndex: 20,
     elevation: 20,
-    minHeight: 64,
+    minHeight: DRAWER_HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 34,
-    paddingTop: 116,
+    paddingTop: DRAWER_HEADER_TOP + DRAWER_HEADER_HEIGHT + DRAWER_CONTENT_GAP,
     paddingBottom: 42,
   },
   logo: {

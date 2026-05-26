@@ -50,9 +50,9 @@ export function AgentHeader({ appName, onMenuPress, points }: AgentHeaderProps) 
 
 const styles = StyleSheet.create({
   header: {
-    height: 82,
-    paddingLeft: 13,
-    paddingRight: 13,
+    height: 70,
+    paddingLeft: 0,
+    paddingRight: 0,
     alignItems: 'center',
     justifyContent: 'space-between',
     flexDirection: 'row',
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     width: 62,
-    height: 62,
+    height: 56,
     alignItems: 'flex-start',
     justifyContent: 'center',
     zIndex: 3,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   rightSlot: {
     width: 96,
-    height: 62,
+    height: 56,
     alignItems: 'flex-end',
     justifyContent: 'center',
     zIndex: 3,

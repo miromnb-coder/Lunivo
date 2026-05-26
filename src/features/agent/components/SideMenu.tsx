@@ -1,4 +1,4 @@
-import { CirclePlus, Grid2X2, Search, SquarePen } from 'lucide-react-native';
+import { CirclePlus, Search, SquarePen } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +30,37 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
+function FourSquaresIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: Parameters<MenuIcon>[0]) {
+  const squareSize = size * 0.31;
+  const borderRadius = squareSize * 0.22;
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignContent: 'space-between',
+        justifyContent: 'space-between',
+      }}
+    >
+      {[0, 1, 2, 3].map((index) => (
+        <View
+          key={index}
+          style={{
+            width: squareSize,
+            height: squareSize,
+            borderRadius,
+            borderWidth: strokeWidth,
+            borderColor: color,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
 function MenuRow({ icon: Icon, iconSize = 31, label, onPress }: MenuRowProps) {
   return (
     <Pressable
@@ -39,7 +70,7 @@ function MenuRow({ icon: Icon, iconSize = 31, label, onPress }: MenuRowProps) {
       style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}
     >
       <View style={styles.menuIconSlot}>
-        <Icon color={ICON_COLOR} size={iconSize} strokeWidth={1.9} />
+        <Icon color={ICON_COLOR} size={iconSize} strokeWidth={1.85} />
       </View>
       <Text allowFontScaling={false} numberOfLines={1} style={styles.menuRowText}>
         {label}
@@ -86,7 +117,7 @@ export function SideMenu({
 
           <View style={styles.headerActions}>
             <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
-              <Search color={ICON_COLOR} size={31} strokeWidth={1.9} />
+              <Search color={ICON_COLOR} size={31} strokeWidth={1.85} />
             </Pressable>
             <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
               <Text allowFontScaling={false} style={styles.avatarText}>
@@ -98,7 +129,7 @@ export function SideMenu({
 
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
-          <MenuRow icon={Grid2X2} label="Library" />
+          <MenuRow icon={FourSquaresIcon} label="Library" />
         </View>
 
         <SectionLabel>SPACES</SectionLabel>
@@ -134,15 +165,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 34,
-    paddingTop: 28,
-    paddingBottom: 54,
+    paddingTop: 0,
+    paddingBottom: 42,
   },
   header: {
-    minHeight: 88,
+    minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 38,
+    marginBottom: 30,
   },
   logo: {
     color: agentTheme.colors.text,
@@ -173,28 +204,28 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#fff',
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '600',
     letterSpacing: -0.25,
   },
   primaryRows: {
-    marginBottom: 18,
+    marginBottom: 10,
   },
   sectionLabel: {
     color: SECTION_COLOR,
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '800',
-    letterSpacing: 4.8,
+    letterSpacing: 4.7,
     marginLeft: 10,
     marginTop: 18,
-    marginBottom: 17,
+    marginBottom: 14,
   },
   sectionRows: {
-    marginBottom: 28,
+    marginBottom: 22,
   },
   menuRow: {
-    minHeight: 72,
+    minHeight: 62,
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 8,
@@ -205,7 +236,7 @@ const styles = StyleSheet.create({
     height: 45,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 32,
+    marginRight: 28,
   },
   menuRowText: {
     color: agentTheme.colors.text,
@@ -216,10 +247,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
   },
   chatRows: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   chatRow: {
-    minHeight: 58,
+    minHeight: 51,
     justifyContent: 'center',
     paddingLeft: 10,
     paddingRight: 14,

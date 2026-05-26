@@ -4,7 +4,8 @@ import { agentTheme } from '../constants/agentTheme';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const HORIZONTAL_PADDING = 26;
-const CARD_GAP = 18;
+const CARD_HORIZONTAL_PADDING = 19;
+const CARD_GAP = 10;
 const MENU_ICON_COLOR = 'rgba(31,36,48,0.92)';
 const ACTIVE_COLOR = '#1f2430';
 const CHIP_BORDER = 'rgba(31,36,48,0.09)';
@@ -39,7 +40,7 @@ function FilterChip({ active = false, label }: { active?: boolean; label: string
 
 export function LibraryScreen({ onMenuPress }: LibraryScreenProps) {
   const { width } = useWindowDimensions();
-  const placeholderWidth = (width - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
+  const placeholderWidth = (width - CARD_HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
 
   return (
     <View style={styles.screen}>
@@ -197,10 +198,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: CARD_GAP,
     marginTop: 28,
+    marginHorizontal: CARD_HORIZONTAL_PADDING - HORIZONTAL_PADDING,
   },
   placeholderCard: {
-    height: 210,
-    borderRadius: 22,
+    height: 228,
+    borderRadius: 23,
     backgroundColor: PLACEHOLDER_BACKGROUND,
     borderWidth: 1,
     borderColor: PLACEHOLDER_BORDER,

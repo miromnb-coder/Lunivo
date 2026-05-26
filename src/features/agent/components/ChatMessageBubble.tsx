@@ -16,13 +16,10 @@ function SelectableMessageText({ content, style }: { content: string; style: Sty
   return (
     <TextInput
       allowFontScaling={false}
-      caretHidden={true}
       contextMenuHidden={false}
-      multiline
-      onChangeText={() => {}}
+      multiline={true}
+      readOnly={true}
       scrollEnabled={false}
-      selectTextOnFocus={false}
-      showSoftInputOnFocus={false}
       style={[styles.selectableTextInput, style]}
       value={content}
     />

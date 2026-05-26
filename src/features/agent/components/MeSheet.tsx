@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   CalendarDays,
   ChevronRight,
   Edit3,
@@ -10,7 +11,6 @@ import {
   Sparkles,
   Star,
   Target,
-  X,
 } from 'lucide-react-native';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -211,18 +211,18 @@ function ProfileContent({
   );
 }
 
-function CreditsContent({ onClose }: { onClose: () => void }) {
+function CreditsContent({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.creditsContent}>
       <View style={styles.creditsHeader}>
         <Pressable
-          accessibilityLabel="Close credits"
+          accessibilityLabel="Back to profile"
           accessibilityRole="button"
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-          onPress={onClose}
-          style={({ pressed }) => [styles.creditsCloseButton, pressed && styles.pressed]}
+          onPress={onBack}
+          style={({ pressed }) => [styles.creditsBackButton, pressed && styles.pressed]}
         >
-          <X color={agentTheme.colors.text} size={28} strokeWidth={1.9} />
+          <ArrowLeft color={agentTheme.colors.text} size={28} strokeWidth={1.9} />
         </Pressable>
         <Text allowFontScaling={false} style={styles.creditsTitle}>
           Credits
@@ -316,6 +316,11 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
     setActiveView('credits');
   }, []);
 
+  const backToProfile = useCallback(() => {
+    lunivoHaptics.selection();
+    setActiveView('profile');
+  }, []);
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -375,7 +380,7 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
 
   return (
     <View pointerEvents={visible ? 'auto' : 'none'} style={styles.root}>
-      <Animated.View style={[styles.backdrop, { opacity: overlayOpacity }]}> 
+      <Animated.View style={[styles.backdrop, { opacity: overlayOpacity }]}>
         <Pressable accessibilityLabel="Close profile" accessibilityRole="button" onPress={closeSheet} style={StyleSheet.absoluteFill} />
       </Animated.View>
 
@@ -392,7 +397,7 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
       >
         <View style={styles.dragHandle} />
         {activeView === 'credits' ? (
-          <CreditsContent onClose={closeSheet} />
+          <CreditsContent onBack={backToProfile} />
         ) : (
           <ProfileContent displayName={displayName} initials={initials} onOpenCredits={openCredits} />
         )}
@@ -542,7 +547,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  creditsCloseButton: {
+  creditsBackButton: {
     position: 'absolute',
     left: 0,
     width: 44,

@@ -103,27 +103,11 @@ export function SideMenu({
 }: SideMenuProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text allowFontScaling={false} style={styles.logo}>
-          Lunivo
-        </Text>
-
-        <View style={styles.headerActions}>
-          <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
-            <Search color={ICON_COLOR} size={31} strokeWidth={1.85} />
-          </Pressable>
-          <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
-            <Text allowFontScaling={false} style={styles.avatarText}>
-              {avatarInitials}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
       <ScrollView
         bounces={false}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
       >
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
@@ -152,6 +136,23 @@ export function SideMenu({
           )}
         </View>
       </ScrollView>
+
+      <View style={styles.header}>
+        <Text allowFontScaling={false} style={styles.logo}>
+          Lunivo
+        </Text>
+
+        <View style={styles.headerActions}>
+          <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
+            <Search color={ICON_COLOR} size={27} strokeWidth={1.85} />
+          </Pressable>
+          <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
+            <Text allowFontScaling={false} style={styles.avatarText}>
+              {avatarInitials}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -162,50 +163,59 @@ const styles = StyleSheet.create({
     backgroundColor: agentTheme.colors.background,
   },
   header: {
-    minHeight: 76,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    elevation: 20,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 34,
-    backgroundColor: agentTheme.colors.background,
+    backgroundColor: 'rgba(248,248,246,0.84)',
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 34,
-    paddingTop: 30,
+    paddingTop: 94,
     paddingBottom: 42,
   },
   logo: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 37,
+    fontSize: 33,
     fontWeight: '700',
-    letterSpacing: -0.75,
-    lineHeight: 46,
+    letterSpacing: -0.68,
+    lineHeight: 40,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 18,
+    gap: 16,
   },
   iconButton: {
-    width: 46,
-    height: 46,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#b1a29b',
   },
   avatarText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    letterSpacing: -0.25,
+    letterSpacing: -0.2,
   },
   primaryRows: {
     marginBottom: 10,

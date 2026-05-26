@@ -1,7 +1,5 @@
 import { supabase } from '../../../lib/supabase';
-import type { ChatMessage } from '../components/ChatMessageList';
-
-type AgentModelMode = 'auto' | 'fast' | 'smart';
+import type { AgentChatMessage, AgentModelMode } from '../types/agent';
 
 type ConversationIdInput = {
   conversationId?: string | null;
@@ -13,7 +11,7 @@ type SaveMessageInput = {
   content: string;
   conversationId: string;
   model?: string | null;
-  role: ChatMessage['role'];
+  role: AgentChatMessage['role'];
 };
 
 const MAX_TITLE_CHARS = 54;

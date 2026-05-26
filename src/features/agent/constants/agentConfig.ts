@@ -3,8 +3,8 @@ import type { AgentModelMode } from '../types/agent';
 export const agentConfig = {
   defaultModel: 'gpt-5-nano',
   defaultModelMode: 'fast' as AgentModelMode,
-  chatFunctionName: 'lunivo-chat-v2',
-  streamFunctionName: 'lunivo-chat-stream',
+  chatFunctionName: 'lunivo-agent',
+  streamFunctionName: 'lunivo-agent-stream',
   attachmentNote: 'Photos are attached in the composer preview, but image analysis is not enabled yet.',
   maxSelectedAttachments: 5,
 } as const;

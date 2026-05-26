@@ -13,6 +13,7 @@ export function resolveModelProfile(modelMode: AgentModelMode = 'fast'): AgentMo
       model: readModelFromEnv('OPENAI_MODEL_SMART', DEFAULT_SMART_MODEL),
       modelMode: 'smart',
       provider: 'openai',
+      maxOutputTokens: 1800,
       supportsTools: false,
       supportsVision: false,
     };
@@ -23,6 +24,7 @@ export function resolveModelProfile(modelMode: AgentModelMode = 'fast'): AgentMo
       model: readModelFromEnv('OPENAI_MODEL_FAST', DEFAULT_FAST_MODEL),
       modelMode: 'auto',
       provider: 'openai',
+      maxOutputTokens: 1400,
       supportsTools: false,
       supportsVision: false,
     };
@@ -32,6 +34,7 @@ export function resolveModelProfile(modelMode: AgentModelMode = 'fast'): AgentMo
     model: readModelFromEnv('OPENAI_MODEL_FAST', DEFAULT_FAST_MODEL),
     modelMode: 'fast',
     provider: 'openai',
+    maxOutputTokens: 1200,
     supportsTools: false,
     supportsVision: false,
   };

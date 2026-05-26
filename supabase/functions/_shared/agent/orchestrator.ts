@@ -15,34 +15,28 @@ import type {
   StreamDeltaHandler,
 } from './types.ts';
 
-const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const MAX_MESSAGES_TO_SEND = 24;
+const MAX_MESSAGE_CHARS = 4000;
+const OPENAI_TIMEOUT_MS = 45000;
 
-type OpenAIChatMessage = {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-};
-
-type OpenAIChatCompletionResponse = {
-  choices?: Array<{
-    message?: {
-      content?: string | null;
-    };
-  }>;
+type OpenAIResponsePayload = {
+  output?: unknown;
+  output_text?: unknown;
   error?: {
     message?: string;
   };
 };
 
 type OpenAIStreamChunk = {
-  choices?: Array<{
-    delta?: {
-      content?: string | null;
-    };
-  }>;
+  type?: string;
+  delta?: unknown;
+  text?: unknown;
+  output_text?: unknown;
   error?: {
     message?: string;
   };
+  response?: OpenAIResponsePayload;
 };
 
 function getOpenAIKey() {
@@ -61,18 +55,86 @@ function normalizeMessages(messages: AgentMessage[]): AgentMessage[] {
     .slice(-MAX_MESSAGES_TO_SEND)
     .map((message) => ({
       role: message.role,
-      content: message.content.trim(),
+      content: message.content.trim().slice(0, MAX_MESSAGE_CHARS),
     }));
 }
 
-function createOpenAIMessages(systemPrompt: string, messages: AgentMessage[]): OpenAIChatMessage[] {
-  return [
-    {
-      role: 'system',
-      content: systemPrompt,
-    },
-    ...normalizeMessages(messages),
-  ];
+function collectText(value: unknown, parts: string[] = []): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (trimmed) {
+      parts.push(trimmed);
+    }
+
+    return parts;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectText(item, parts);
+    }
+
+    return parts;
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return parts;
+  }
+
+  const object = value as Record<string, unknown>;
+  const type = typeof object.type === 'string' ? object.type : '';
+
+  if (typeof object.output_text === 'string') {
+    collectText(object.output_text, parts);
+  }
+
+  if ((type === 'output_text' || type === 'text') && typeof object.text === 'string') {
+    collectText(object.text, parts);
+  }
+
+  if (typeof object.content === 'string' || Array.isArray(object.content)) {
+    collectText(object.content, parts);
+  }
+
+  if (Array.isArray(object.output)) {
+    collectText(object.output, parts);
+  }
+
+  if (typeof object.message === 'object' && object.message !== null) {
+    collectText(object.message, parts);
+  }
+
+  return parts;
+}
+
+function extractAnswer(payload: unknown) {
+  const parts = collectText(payload);
+  return parts.filter((part, index) => parts.indexOf(part) === index).join('\n').trim();
+}
+
+function getStreamDelta(payload: OpenAIStreamChunk) {
+  if (payload.error?.message) {
+    throw new Error(payload.error.message);
+  }
+
+  if (payload.type === 'response.output_text.delta' && typeof payload.delta === 'string') {
+    return payload.delta;
+  }
+
+  if (typeof payload.delta === 'string') {
+    return payload.delta;
+  }
+
+  if (typeof payload.text === 'string') {
+    return payload.text;
+  }
+
+  if (typeof payload.output_text === 'string') {
+    return payload.output_text;
+  }
+
+  return '';
 }
 
 async function createAgentContext(request: AgentRequest) {
@@ -94,31 +156,47 @@ async function createAgentContext(request: AgentRequest) {
   };
 }
 
-async function callOpenAIChat(request: AgentRequest): Promise<AgentResponse> {
+function createOpenAIRequestBody(request: AgentRequest, instructions: string, maxOutputTokens: number, stream = false) {
+  const model = resolveModelProfile(request.modelMode ?? 'fast');
+
+  return {
+    model: model.model,
+    instructions,
+    input: normalizeMessages(request.messages),
+    reasoning: { effort: 'minimal' },
+    text: { verbosity: 'low' },
+    max_output_tokens: maxOutputTokens,
+    store: false,
+    stream,
+  };
+}
+
+export async function runAgent(request: AgentRequest): Promise<AgentResponse> {
   const context = await createAgentContext(request);
   const runId = await recordAgentRunStart(request, context);
-  const systemPrompt = buildSystemPrompt(context.memory);
+  const instructions = buildSystemPrompt(context.memory);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
 
   try {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    const response = await fetch(OPENAI_RESPONSES_URL, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${getOpenAIKey()}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: context.model.model,
-        messages: createOpenAIMessages(systemPrompt, request.messages),
-      }),
+      body: JSON.stringify(createOpenAIRequestBody(request, instructions, context.model.maxOutputTokens)),
     });
 
-    const payload = await response.json() as OpenAIChatCompletionResponse;
+    clearTimeout(timeoutId);
+    const payload = await response.json().catch(() => ({})) as OpenAIResponsePayload;
 
     if (!response.ok) {
       throw new Error(payload.error?.message ?? 'OpenAI request failed.');
     }
 
-    const answer = payload.choices?.[0]?.message?.content?.trim();
+    const answer = extractAnswer(payload);
 
     if (!answer) {
       throw new Error('OpenAI returned an empty answer.');
@@ -136,34 +214,34 @@ async function callOpenAIChat(request: AgentRequest): Promise<AgentResponse> {
     await recordAgentRunSuccess(runId, agentResponse);
     return agentResponse;
   } catch (error) {
+    clearTimeout(timeoutId);
     await recordAgentRunError(runId, error);
     throw error;
   }
 }
 
-async function callOpenAIChatStream(request: AgentRequest, onDelta: StreamDeltaHandler): Promise<AgentResponse> {
+export async function streamAgent(request: AgentRequest, onDelta: StreamDeltaHandler): Promise<AgentResponse> {
   const context = await createAgentContext(request);
   const runId = await recordAgentRunStart(request, context);
-  const systemPrompt = buildSystemPrompt(context.memory);
+  const instructions = buildSystemPrompt(context.memory);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
   let answer = '';
 
   try {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    const response = await fetch(OPENAI_RESPONSES_URL, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${getOpenAIKey()}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: context.model.model,
-        messages: createOpenAIMessages(systemPrompt, request.messages),
-        stream: true,
-      }),
+      body: JSON.stringify(createOpenAIRequestBody(request, instructions, context.model.maxOutputTokens, true)),
     });
 
     if (!response.ok || !response.body) {
-      const payload = await response.json().catch(() => null) as OpenAIChatCompletionResponse | null;
-      throw new Error(payload?.error?.message ?? 'OpenAI stream request failed.');
+      const payload = await response.json().catch(() => ({})) as OpenAIResponsePayload;
+      throw new Error(payload.error?.message ?? 'OpenAI stream request failed.');
     }
 
     const reader = response.body.getReader();
@@ -194,12 +272,7 @@ async function callOpenAIChatStream(request: AgentRequest, onDelta: StreamDeltaH
           }
 
           const payload = JSON.parse(data) as OpenAIStreamChunk;
-
-          if (payload.error?.message) {
-            throw new Error(payload.error.message);
-          }
-
-          const delta = payload.choices?.[0]?.delta?.content ?? '';
+          const delta = getStreamDelta(payload);
 
           if (delta) {
             answer += delta;
@@ -209,6 +282,7 @@ async function callOpenAIChatStream(request: AgentRequest, onDelta: StreamDeltaH
       }
     }
 
+    clearTimeout(timeoutId);
     const cleanAnswer = answer.trim();
 
     if (!cleanAnswer) {
@@ -227,15 +301,8 @@ async function callOpenAIChatStream(request: AgentRequest, onDelta: StreamDeltaH
     await recordAgentRunSuccess(runId, agentResponse);
     return agentResponse;
   } catch (error) {
+    clearTimeout(timeoutId);
     await recordAgentRunError(runId, error);
     throw error;
   }
-}
-
-export async function runAgent(request: AgentRequest): Promise<AgentResponse> {
-  return callOpenAIChat(request);
-}
-
-export async function streamAgent(request: AgentRequest, onDelta: StreamDeltaHandler): Promise<AgentResponse> {
-  return callOpenAIChatStream(request, onDelta);
 }

@@ -12,7 +12,7 @@ const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
 const DRAWER_HEADER_TOP = 34;
 const DRAWER_HEADER_HEIGHT = 82;
-const DRAWER_CONTENT_GAP = 8;
+const DRAWER_CONTENT_GAP = -12;
 
 type MenuIconProps = {
   color?: string;

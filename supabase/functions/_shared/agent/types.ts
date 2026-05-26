@@ -19,6 +19,7 @@ export type AgentModelProfile = {
   model: string;
   modelMode: AgentModelMode;
   provider: AgentProvider;
+  maxOutputTokens: number;
   supportsTools: boolean;
   supportsVision: boolean;
 };

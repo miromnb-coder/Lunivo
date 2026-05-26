@@ -15,6 +15,11 @@ type MessageRow = {
   content: string;
 };
 
+export type CurrentUserProfile = {
+  displayName: string;
+  initials: string;
+};
+
 function getTextInitials(value?: string | null) {
   const cleanValue = value?.trim();
 
@@ -36,16 +41,37 @@ function getTextInitials(value?: string | null) {
   return parts[0]?.slice(0, 2).toUpperCase() ?? null;
 }
 
-export async function getCurrentUserInitials() {
+function getDisplayName(value?: string | null) {
+  const cleanValue = value?.trim();
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  const emailName = cleanValue.includes('@') ? cleanValue.split('@')[0] : cleanValue;
+  const firstPart = emailName
+    .replace(/[._-]+/g, ' ')
+    .split(' ')
+    .map((part) => part.trim())
+    .filter(Boolean)[0];
+
+  if (!firstPart) {
+    return null;
+  }
+
+  return `${firstPart[0].toUpperCase()}${firstPart.slice(1)}`;
+}
+
+export async function getCurrentUserProfile(): Promise<CurrentUserProfile> {
   if (!supabase) {
-    return 'MS';
+    return { displayName: 'Miro', initials: 'MI' };
   }
 
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
 
   if (!user) {
-    return 'MS';
+    return { displayName: 'Miro', initials: 'MI' };
   }
 
   const { data: profile } = await supabase
@@ -64,13 +90,25 @@ export async function getCurrentUserInitials() {
           ? metadata.name
           : null;
 
-  return (
+  const displayName =
+    getDisplayName(profile?.display_name) ??
+    getDisplayName(metadataName) ??
+    getDisplayName(profile?.email) ??
+    getDisplayName(user.email) ??
+    'Miro';
+
+  const initials =
     getTextInitials(profile?.display_name) ??
     getTextInitials(metadataName) ??
     getTextInitials(profile?.email) ??
     getTextInitials(user.email) ??
-    'MS'
-  );
+    'MI';
+
+  return { displayName, initials };
+}
+
+export async function getCurrentUserInitials() {
+  return (await getCurrentUserProfile()).initials;
 }
 
 export async function fetchConversations(): Promise<ConversationSummary[]> {

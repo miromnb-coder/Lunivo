@@ -7,7 +7,8 @@ import {
 import type { ConversationSummary } from '../types/conversation';
 
 export function useAgentConversations() {
-  const [avatarInitials, setAvatarInitials] = useState('MS');
+  const [avatarInitials, setAvatarInitials] = useState('MI');
+  const [displayName] = useState('Miro');
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
 
   const refreshConversations = useCallback(async () => {
@@ -31,6 +32,7 @@ export function useAgentConversations() {
   return {
     avatarInitials,
     conversations,
+    displayName,
     refreshConversations,
   };
 }

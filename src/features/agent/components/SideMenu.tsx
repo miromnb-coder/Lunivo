@@ -12,7 +12,7 @@ const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
 const DRAWER_HEADER_TOP = 34;
 const DRAWER_HEADER_HEIGHT = 82;
-const DRAWER_CONTENT_GAP = 20;
+const DRAWER_CONTENT_GAP = 8;
 
 type MenuIconProps = {
   color?: string;
@@ -36,38 +36,38 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
-function LibraryBooksIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: MenuIconProps) {
-  const lineWidth = Math.max(strokeWidth, 2.35);
+function LibraryBooksIcon({ color = ICON_COLOR, size = 34, strokeWidth = 1.85 }: MenuIconProps) {
+  const lineWidth = Math.max(strokeWidth, 2.65);
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
       <Rect
-        x="5.5"
-        y="7"
-        width="6.3"
-        height="18"
-        rx="2.25"
+        x="7"
+        y="9"
+        width="7.6"
+        height="22"
+        rx="3"
         stroke={color}
         strokeWidth={lineWidth}
       />
       <Rect
-        x="13.25"
-        y="7"
-        width="6.3"
-        height="18"
-        rx="2.25"
+        x="16.4"
+        y="9"
+        width="7.6"
+        height="22"
+        rx="3"
         stroke={color}
         strokeWidth={lineWidth}
       />
       <Rect
-        x="20.75"
-        y="7.35"
-        width="6.3"
-        height="18"
-        rx="2.25"
+        x="25.7"
+        y="9.55"
+        width="7.6"
+        height="22"
+        rx="3"
         stroke={color}
         strokeWidth={lineWidth}
-        transform="rotate(-6 23.9 16.35)"
+        transform="rotate(-7 29.5 20.55)"
       />
     </Svg>
   );
@@ -125,7 +125,7 @@ export function SideMenu({
       >
         <View style={styles.primaryRows}>
           <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
-          <MenuRow icon={LibraryBooksIcon} label="Library" />
+          <MenuRow icon={LibraryBooksIcon} iconSize={34} label="Library" />
         </View>
 
         <SectionLabel>SPACES</SectionLabel>

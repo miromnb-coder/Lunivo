@@ -17,6 +17,7 @@ import { ChatMessageList } from '../components/ChatMessageList';
 import { DrawerShell } from '../components/DrawerShell';
 import { HeroMessage } from '../components/HeroMessage';
 import { LunivoPlusSheet } from '../components/LunivoPlusSheet';
+import { MeSheet } from '../components/MeSheet';
 import { QuickActions } from '../components/QuickActions';
 import { agentLayoutConfig } from '../constants/agentConfig';
 import { agentTheme } from '../constants/agentTheme';
@@ -40,11 +41,12 @@ export function AgentHomeScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [plusSheetVisible, setPlusSheetVisible] = useState(false);
+  const [meSheetVisible, setMeSheetVisible] = useState(false);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
 
-  const { avatarInitials, conversations, refreshConversations } = useAgentConversations();
+  const { avatarInitials, conversations, displayName, refreshConversations } = useAgentConversations();
 
   const animateHero = useCallback(
     (visible: boolean, duration = 220) => {
@@ -69,6 +71,7 @@ export function AgentHomeScreen() {
   const closeActiveOverlays = useCallback(() => {
     Keyboard.dismiss();
     setPlusSheetVisible(false);
+    setMeSheetVisible(false);
   }, []);
 
   const hidePlusSheet = useCallback(() => {
@@ -115,6 +118,17 @@ export function AgentHomeScreen() {
     closeComposerPosition(180);
     setActiveView('library');
   }, [closeActiveOverlays, closeComposerPosition]);
+
+  const openMeSheet = useCallback(() => {
+    Keyboard.dismiss();
+    setPlusSheetVisible(false);
+    closeComposerPosition(180);
+    setMeSheetVisible(true);
+  }, [closeComposerPosition]);
+
+  const closeMeSheet = useCallback(() => {
+    setMeSheetVisible(false);
+  }, []);
 
   const handleNewChat = useCallback(() => {
     openChatView();
@@ -168,6 +182,7 @@ export function AgentHomeScreen() {
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
       setPlusSheetVisible(false);
+      setMeSheetVisible(false);
       const nextKeyboardHeight = event.endCoordinates.height;
       setKeyboardOpen(true);
       setKeyboardHeight(nextKeyboardHeight);
@@ -210,9 +225,18 @@ export function AgentHomeScreen() {
     <DrawerShell
       avatarInitials={avatarInitials}
       conversations={conversations}
-      gesturesEnabled={!plusSheetVisible}
+      gesturesEnabled={!plusSheetVisible && !meSheetVisible}
+      overlay={
+        <MeSheet
+          displayName={displayName}
+          initials={avatarInitials}
+          visible={meSheetVisible}
+          onClose={closeMeSheet}
+        />
+      }
       onNewChat={handleNewChat}
       onOpenLibrary={openLibraryView}
+      onOpenProfile={openMeSheet}
       onSelectConversation={handleSelectConversation}
     >
       {({ openDrawer }) => (

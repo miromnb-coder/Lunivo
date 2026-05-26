@@ -2,23 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   fetchConversations,
-  getCurrentUserInitials,
+  getCurrentUserProfile,
 } from '../services/conversationRepository';
 import type { ConversationSummary } from '../types/conversation';
 
 export function useAgentConversations() {
   const [avatarInitials, setAvatarInitials] = useState('MI');
-  const [displayName] = useState('Miro');
+  const [displayName, setDisplayName] = useState('Miro');
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
 
   const refreshConversations = useCallback(async () => {
     try {
-      const [nextInitials, nextConversations] = await Promise.all([
-        getCurrentUserInitials(),
+      const [nextProfile, nextConversations] = await Promise.all([
+        getCurrentUserProfile(),
         fetchConversations(),
       ]);
 
-      setAvatarInitials(nextInitials);
+      setAvatarInitials(nextProfile.initials);
+      setDisplayName(nextProfile.displayName);
       setConversations(nextConversations);
     } catch {
       // Keep the menu usable even if history/profile loading fails.

@@ -7,9 +7,9 @@ const HORIZONTAL_PADDING = 26;
 const CARD_GAP = 18;
 const MENU_ICON_COLOR = 'rgba(31,36,48,0.92)';
 const ACTIVE_COLOR = '#1f2430';
-const CHIP_BORDER = 'rgba(31,36,48,0.095)';
-const PLACEHOLDER_BACKGROUND = 'rgba(255,255,255,0.32)';
-const PLACEHOLDER_BORDER = 'rgba(31,36,48,0.022)';
+const CHIP_BORDER = 'rgba(31,36,48,0.09)';
+const PLACEHOLDER_BACKGROUND = 'rgba(255,255,255,0.28)';
+const PLACEHOLDER_BORDER = 'rgba(31,36,48,0.02)';
 
 type LibraryScreenProps = {
   onMenuPress?: () => void;
@@ -137,10 +137,10 @@ const styles = StyleSheet.create({
     right: 0,
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 29,
-    fontWeight: '700',
-    lineHeight: 36,
-    letterSpacing: -0.42,
+    fontSize: 28.5,
+    fontWeight: '600',
+    lineHeight: 35,
+    letterSpacing: -0.36,
     textAlign: 'center',
   },
   optionsButton: {
@@ -168,13 +168,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   filterChip: {
-    height: 39,
-    minWidth: 74,
-    paddingHorizontal: 18,
+    height: 37,
+    minWidth: 72,
+    paddingHorizontal: 17,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     borderWidth: 1,
     borderColor: CHIP_BORDER,
   },
@@ -185,10 +185,10 @@ const styles = StyleSheet.create({
   filterText: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 16.5,
+    fontSize: 16,
     lineHeight: 20,
-    fontWeight: '500',
-    letterSpacing: -0.16,
+    fontWeight: '400',
+    letterSpacing: -0.1,
   },
   activeFilterText: {
     color: '#fff',
@@ -196,10 +196,10 @@ const styles = StyleSheet.create({
   placeholderRow: {
     flexDirection: 'row',
     gap: CARD_GAP,
-    marginTop: 36,
+    marginTop: 28,
   },
   placeholderCard: {
-    height: 224,
+    height: 210,
     borderRadius: 22,
     backgroundColor: PLACEHOLDER_BACKGROUND,
     borderWidth: 1,
@@ -207,21 +207,21 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    marginTop: 84,
+    marginTop: 132,
   },
   emptyTitle: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 25,
-    lineHeight: 34,
+    fontSize: 24.5,
+    lineHeight: 33,
     fontWeight: '400',
-    letterSpacing: -0.4,
+    letterSpacing: -0.35,
     textAlign: 'center',
   },
   createButton: {
-    minWidth: 134,
-    height: 50,
-    marginTop: 27,
+    minWidth: 132,
+    height: 49,
+    marginTop: 26,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
@@ -235,10 +235,10 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#fff',
     fontFamily: serifFont,
-    fontSize: 19,
+    fontSize: 18.5,
     lineHeight: 23,
-    fontWeight: '500',
-    letterSpacing: -0.22,
+    fontWeight: '400',
+    letterSpacing: -0.18,
   },
   pressed: {
     opacity: 0.62,

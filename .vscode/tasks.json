@@ -8,6 +8,12 @@
       "problemMatcher": []
     },
     {
+      "label": "Install dependencies legacy",
+      "type": "shell",
+      "command": "npm install --legacy-peer-deps",
+      "problemMatcher": []
+    },
+    {
       "label": "Start Expo",
       "type": "npm",
       "script": "start",

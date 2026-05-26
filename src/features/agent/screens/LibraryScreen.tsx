@@ -9,8 +9,8 @@ const CARD_GAP = 10;
 const MENU_ICON_COLOR = 'rgba(31,36,48,0.92)';
 const ACTIVE_COLOR = '#1f2430';
 const CHIP_BORDER = 'rgba(31,36,48,0.09)';
-const PLACEHOLDER_BACKGROUND = 'rgba(255,255,255,0.28)';
-const PLACEHOLDER_BORDER = 'rgba(31,36,48,0.02)';
+const PLACEHOLDER_BACKGROUND = 'rgba(255,255,255,0.3)';
+const PLACEHOLDER_BORDER = 'rgba(31,36,48,0.018)';
 
 type LibraryScreenProps = {
   onMenuPress?: () => void;
@@ -35,6 +35,18 @@ function FilterChip({ active = false, label }: { active?: boolean; label: string
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+function PlaceholderCard({ width }: { width: number }) {
+  return (
+    <View style={[styles.placeholderCard, { width }]}> 
+      <View style={styles.placeholderPanel} />
+      <View pointerEvents="none" style={[styles.fadeBand, styles.fadeBandOne]} />
+      <View pointerEvents="none" style={[styles.fadeBand, styles.fadeBandTwo]} />
+      <View pointerEvents="none" style={[styles.fadeBand, styles.fadeBandThree]} />
+      <View pointerEvents="none" style={[styles.fadeBand, styles.fadeBandFour]} />
+    </View>
   );
 }
 
@@ -78,8 +90,8 @@ export function LibraryScreen({ onMenuPress }: LibraryScreenProps) {
       </View>
 
       <View style={styles.placeholderRow}>
-        <View style={[styles.placeholderCard, { width: placeholderWidth }]} />
-        <View style={[styles.placeholderCard, { width: placeholderWidth }]} />
+        <PlaceholderCard width={placeholderWidth} />
+        <PlaceholderCard width={placeholderWidth} />
       </View>
 
       <View style={styles.emptyState}>
@@ -203,9 +215,40 @@ const styles = StyleSheet.create({
   placeholderCard: {
     height: 228,
     borderRadius: 23,
+    overflow: 'hidden',
+  },
+  placeholderPanel: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 23,
     backgroundColor: PLACEHOLDER_BACKGROUND,
     borderWidth: 1,
     borderColor: PLACEHOLDER_BORDER,
+  },
+  fadeBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: agentTheme.colors.background,
+  },
+  fadeBandOne: {
+    top: 126,
+    height: 30,
+    opacity: 0.12,
+  },
+  fadeBandTwo: {
+    top: 154,
+    height: 34,
+    opacity: 0.28,
+  },
+  fadeBandThree: {
+    top: 184,
+    height: 38,
+    opacity: 0.58,
+  },
+  fadeBandFour: {
+    bottom: 0,
+    height: 28,
+    opacity: 0.98,
   },
   emptyState: {
     alignItems: 'center',

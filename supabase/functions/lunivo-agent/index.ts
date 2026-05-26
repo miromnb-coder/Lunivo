@@ -13,6 +13,7 @@ function jsonResponse(body: unknown, status = 200) {
     headers: {
       ...corsHeaders,
       'Content-Type': 'application/json',
+      Connection: 'keep-alive',
     },
   });
 }

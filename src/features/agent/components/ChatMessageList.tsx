@@ -1,14 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import type { AgentChatMessage } from '../types/agent';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { ChatThinkingBubble } from './ChatThinkingBubble';
 
-export type ChatMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
+export type ChatMessage = AgentChatMessage;
 
 type ChatMessageListProps = {
   messages: ChatMessage[];

@@ -30,12 +30,18 @@ function Divider() {
 }
 
 function Row({ Icon, label, value }: { Icon: IconComponent; label: string; value?: string }) {
+  const hasValue = Boolean(value);
+
   return (
     <Pressable accessibilityRole="button" style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={styles.iconSlot}>
-        <Icon color={ICON_COLOR} size={25} strokeWidth={1.85} />
+        <Icon color={ICON_COLOR} size={23} strokeWidth={1.75} />
       </View>
-      <Text allowFontScaling={false} style={styles.rowLabel}>
+      <Text
+        allowFontScaling={false}
+        numberOfLines={hasValue ? 1 : 2}
+        style={[styles.rowLabel, hasValue ? styles.rowLabelWithValue : styles.rowLabelAction]}
+      >
         {label}
       </Text>
       {value ? (
@@ -43,7 +49,7 @@ function Row({ Icon, label, value }: { Icon: IconComponent; label: string; value
           {value}
         </Text>
       ) : null}
-      <ChevronRight color="rgba(31,36,48,0.5)" size={20} strokeWidth={2} />
+      <ChevronRight color="rgba(31,36,48,0.45)" size={18} strokeWidth={2} />
     </Pressable>
   );
 }
@@ -66,7 +72,13 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
               {initials}
             </Text>
           </View>
-          <Text allowFontScaling={false} style={styles.name}>
+          <Text
+            adjustsFontSizeToFit
+            allowFontScaling={false}
+            minimumFontScale={0.78}
+            numberOfLines={1}
+            style={styles.name}
+          >
             {displayName}
           </Text>
           <Text allowFontScaling={false} style={styles.subtitle}>
@@ -113,10 +125,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(17,24,39,0.48)',
   },
   sheet: {
-    minHeight: '82%',
-    paddingTop: 16,
+    height: '86%',
+    paddingTop: 14,
     paddingHorizontal: 30,
-    paddingBottom: 28,
+    paddingBottom: 24,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     backgroundColor: '#fffefc',
@@ -135,40 +147,42 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     alignItems: 'center',
-    paddingTop: 29,
-    paddingBottom: 28,
+    paddingTop: 27,
+    paddingBottom: 24,
   },
   avatar: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: AVATAR_COLOR,
   },
   avatarText: {
     color: '#fff',
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 29,
+    lineHeight: 34,
     fontWeight: '600',
-    letterSpacing: -0.4,
+    letterSpacing: -0.35,
   },
   name: {
-    marginTop: 18,
+    maxWidth: '88%',
+    marginTop: 15,
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 31,
-    lineHeight: 38,
+    fontSize: 30,
+    lineHeight: 36,
     fontWeight: '700',
-    letterSpacing: -0.52,
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
   subtitle: {
-    marginTop: 4,
+    marginTop: 2,
     color: agentTheme.colors.mutedText,
-    fontSize: 16,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '400',
-    letterSpacing: -0.14,
+    letterSpacing: -0.12,
   },
   card: {
     overflow: 'hidden',
@@ -178,50 +192,55 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(31,36,48,0.055)',
   },
   row: {
-    minHeight: 59,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 20,
+    paddingLeft: 18,
     paddingRight: 15,
   },
   iconSlot: {
-    width: 35,
+    width: 32,
     alignItems: 'flex-start',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 13,
   },
   rowLabel: {
     color: agentTheme.colors.text,
-    width: 98,
-    fontSize: 15.5,
-    lineHeight: 20,
+    fontSize: 14.5,
+    lineHeight: 18,
     fontWeight: '700',
-    letterSpacing: -0.15,
+    letterSpacing: -0.12,
+  },
+  rowLabelWithValue: {
+    width: 88,
+  },
+  rowLabelAction: {
+    flex: 1,
   },
   rowValue: {
-    color: 'rgba(31,36,48,0.76)',
+    color: 'rgba(31,36,48,0.74)',
     flex: 1,
-    marginRight: 10,
+    marginRight: 9,
     textAlign: 'right',
-    fontSize: 15.5,
-    lineHeight: 20,
+    fontSize: 14.5,
+    lineHeight: 18,
     fontWeight: '400',
-    letterSpacing: -0.12,
+    letterSpacing: -0.1,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 70,
-    backgroundColor: 'rgba(31,36,48,0.075)',
+    marginLeft: 63,
+    backgroundColor: 'rgba(31,36,48,0.065)',
   },
   sectionLabel: {
     color: agentTheme.colors.mutedText,
-    marginTop: 25,
+    marginTop: 23,
     marginLeft: 18,
-    marginBottom: 15,
-    fontSize: 11,
-    lineHeight: 15,
+    marginBottom: 14,
+    fontSize: 10.5,
+    lineHeight: 14,
     fontWeight: '800',
-    letterSpacing: 4.2,
+    letterSpacing: 4,
   },
   pressed: {
     opacity: 0.58,

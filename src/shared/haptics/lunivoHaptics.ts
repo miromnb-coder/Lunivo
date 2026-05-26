@@ -30,6 +30,10 @@ async function safeHaptic(key: string, callback: () => Promise<void>, cooldownMs
 }
 
 export const lunivoHaptics = {
+  selection() {
+    return safeHaptic('selection', () => Haptics.selectionAsync());
+  },
+
   openDrawer() {
     return safeHaptic('drawer', () => Haptics.selectionAsync());
   },

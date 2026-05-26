@@ -5,6 +5,7 @@ import { agentTheme } from '../constants/agentTheme';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const MENU_ICON_COLOR = 'rgba(17,24,39,0.78)';
+const HOME_HEADER_RAISE = -10;
 
 type AgentHeaderProps = {
   appName: string;
@@ -51,6 +52,7 @@ export function AgentHeader({ appName, onMenuPress, points }: AgentHeaderProps) 
 const styles = StyleSheet.create({
   header: {
     height: 70,
+    marginTop: HOME_HEADER_RAISE,
     paddingLeft: 0,
     paddingRight: 0,
     alignItems: 'center',

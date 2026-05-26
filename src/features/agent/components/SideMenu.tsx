@@ -34,6 +34,7 @@ type SideMenuProps = {
   conversations: ConversationSummary[];
   onNewChat: () => void;
   onOpenLibrary: () => void;
+  onOpenProfile: () => void;
   onSelectConversation: (conversationId: string) => void;
 };
 
@@ -115,6 +116,7 @@ export function SideMenu({
   conversations,
   onNewChat,
   onOpenLibrary,
+  onOpenProfile,
   onSelectConversation,
 }: SideMenuProps) {
   return (
@@ -162,7 +164,7 @@ export function SideMenu({
           <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
             <Search color={ICON_COLOR} size={27} strokeWidth={1.85} />
           </Pressable>
-          <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
+          <Pressable accessibilityLabel="Profile" accessibilityRole="button" onPress={onOpenProfile} style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}>
             <Text allowFontScaling={false} style={styles.avatarText}>
               {avatarInitials}
             </Text>

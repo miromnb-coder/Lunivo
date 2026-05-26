@@ -1,20 +1,10 @@
-import {
-  BookOpen,
-  ChevronDown,
-  CirclePlus,
-  MessageCircle,
-  PencilLine,
-  Search,
-  Settings,
-  Target,
-  UsersRound,
-} from 'lucide-react-native';
+import { CirclePlus, Grid2X2, Search, SquarePen } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { agentTheme } from '../constants/agentTheme';
-import type { ConversationSummary } from '../services/chatHistory';
+import type { ConversationSummary } from '../types/conversation';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const ICON_COLOR = agentTheme.colors.text;
@@ -28,13 +18,9 @@ type MenuIcon = ComponentType<{
 
 type MenuRowProps = {
   icon: MenuIcon;
+  iconSize?: number;
   label: string;
   onPress?: () => void;
-};
-
-type QuickCardProps = {
-  icon: MenuIcon;
-  label: string;
 };
 
 type SideMenuProps = {
@@ -44,27 +30,16 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
-const spaceItems: MenuRowProps[] = [
-  { icon: CirclePlus, label: 'New space' },
-  { icon: ChevronDown, label: 'Show more' },
-];
-
-function QuickCard({ icon: Icon, label }: QuickCardProps) {
+function MenuRow({ icon: Icon, iconSize = 31, label, onPress }: MenuRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}>
-      <Icon color={ICON_COLOR} size={25} strokeWidth={1.85} />
-      <Text allowFontScaling={false} style={styles.quickCardText}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function MenuRow({ icon: Icon, label, onPress }: MenuRowProps) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}>
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}
+    >
       <View style={styles.menuIconSlot}>
-        <Icon color={ICON_COLOR} size={23} strokeWidth={1.85} />
+        <Icon color={ICON_COLOR} size={iconSize} strokeWidth={1.9} />
       </View>
       <Text allowFontScaling={false} numberOfLines={1} style={styles.menuRowText}>
         {label}
@@ -76,7 +51,6 @@ function MenuRow({ icon: Icon, label, onPress }: MenuRowProps) {
 function ChatRow({ conversation, onPress }: { conversation: ConversationSummary; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.chatRow, pressed && styles.pressed]}>
-      <MessageCircle color={ICON_COLOR} size={21} strokeWidth={1.85} />
       <Text allowFontScaling={false} numberOfLines={1} style={styles.chatRowText}>
         {conversation.title}
       </Text>
@@ -112,7 +86,7 @@ export function SideMenu({
 
           <View style={styles.headerActions}>
             <Pressable accessibilityLabel="Search" accessibilityRole="button" style={styles.iconButton}>
-              <Search color={ICON_COLOR} size={27} strokeWidth={1.9} />
+              <Search color={ICON_COLOR} size={31} strokeWidth={1.9} />
             </Pressable>
             <Pressable accessibilityLabel="Profile" accessibilityRole="button" style={styles.avatar}>
               <Text allowFontScaling={false} style={styles.avatarText}>
@@ -122,25 +96,17 @@ export function SideMenu({
           </View>
         </View>
 
-        <View style={styles.quickCardsRow}>
-          <QuickCard icon={Target} label="Focus" />
-          <QuickCard icon={BookOpen} label="Library" />
-          <QuickCard icon={UsersRound} label="Spaces" />
-        </View>
-
-        <SectionLabel>LEARN</SectionLabel>
-        <View style={styles.sectionRows}>
-          <MenuRow icon={PencilLine} label="New chat" onPress={onNewChat} />
+        <View style={styles.primaryRows}>
+          <MenuRow icon={SquarePen} label="New chat" onPress={onNewChat} />
+          <MenuRow icon={Grid2X2} label="Library" />
         </View>
 
         <SectionLabel>SPACES</SectionLabel>
         <View style={styles.sectionRows}>
-          {spaceItems.map((item) => (
-            <MenuRow key={item.label} {...item} />
-          ))}
+          <MenuRow icon={CirclePlus} iconSize={33} label="New space" />
         </View>
 
-        <SectionLabel>CHATS</SectionLabel>
+        <SectionLabel>RECENT</SectionLabel>
         <View style={styles.chatRows}>
           {conversations.length > 0 ? (
             conversations.map((conversation) => (
@@ -157,10 +123,6 @@ export function SideMenu({
           )}
         </View>
       </ScrollView>
-
-      <Pressable accessibilityLabel="Open settings" accessibilityRole="button" style={styles.settingsButton}>
-        <Settings color={ICON_COLOR} size={27} strokeWidth={1.9} />
-      </Pressable>
     </SafeAreaView>
   );
 }
@@ -172,22 +134,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 34,
-    paddingTop: 22,
-    paddingBottom: 120,
+    paddingTop: 28,
+    paddingBottom: 54,
   },
   header: {
-    minHeight: 78,
+    minHeight: 88,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 38,
   },
   logo: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 36,
+    fontSize: 37,
     fontWeight: '700',
-    letterSpacing: -0.7,
-    lineHeight: 44,
+    letterSpacing: -0.75,
+    lineHeight: 46,
   },
   headerActions: {
     flexDirection: 'row',
@@ -195,127 +158,87 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   iconButton: {
-    width: 42,
-    height: 42,
+    width: 46,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatar: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#8885a5',
+    backgroundColor: '#b1a29b',
   },
   avatarText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 19,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
   },
-  quickCardsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 14,
-    marginBottom: 28,
-  },
-  quickCard: {
-    flex: 1,
-    minHeight: 78,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(31,36,48,0.065)',
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: agentTheme.colors.shadow,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 2,
-  },
-  quickCardText: {
-    color: agentTheme.colors.text,
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '600',
-    letterSpacing: -0.15,
+  primaryRows: {
+    marginBottom: 18,
   },
   sectionLabel: {
     color: SECTION_COLOR,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: '800',
-    letterSpacing: 2.7,
-    marginLeft: 8,
-    marginBottom: 12,
+    letterSpacing: 4.8,
+    marginLeft: 10,
+    marginTop: 18,
+    marginBottom: 17,
   },
   sectionRows: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   menuRow: {
-    minHeight: 46,
-    borderRadius: 18,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 10,
+    paddingLeft: 8,
     paddingRight: 14,
   },
   menuIconSlot: {
-    width: 44,
-    height: 40,
+    width: 45,
+    height: 45,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 32,
   },
   menuRowText: {
     color: agentTheme.colors.text,
     flex: 1,
-    fontSize: 18,
-    lineHeight: 23,
-    fontWeight: '500',
-    letterSpacing: -0.25,
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '400',
+    letterSpacing: -0.24,
   },
   chatRows: {
     marginBottom: 24,
   },
   chatRow: {
-    minHeight: 42,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingLeft: 21,
+    minHeight: 58,
+    justifyContent: 'center',
+    paddingLeft: 10,
     paddingRight: 14,
   },
   chatRowText: {
     color: agentTheme.colors.text,
-    flex: 1,
-    fontSize: 17,
-    lineHeight: 23,
-    fontWeight: '500',
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '400',
     letterSpacing: -0.22,
   },
   emptyChatsText: {
     color: agentTheme.colors.mutedText,
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: '400',
     letterSpacing: -0.16,
-    marginLeft: 21,
+    marginLeft: 10,
     marginBottom: 6,
-  },
-  settingsButton: {
-    position: 'absolute',
-    right: 36,
-    bottom: 38,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   pressed: {
     opacity: 0.58,

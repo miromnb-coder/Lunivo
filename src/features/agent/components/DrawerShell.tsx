@@ -29,6 +29,7 @@ type DrawerShellProps = {
   gesturesEnabled?: boolean;
   onNewChat: () => void;
   onOpenLibrary: () => void;
+  onOpenProfile: () => void;
   onSelectConversation: (conversationId: string) => void;
 };
 
@@ -74,6 +75,7 @@ export function DrawerShell({
   gesturesEnabled = true,
   onNewChat,
   onOpenLibrary,
+  onOpenProfile,
   onSelectConversation,
 }: DrawerShellProps) {
   const { width } = useWindowDimensions();
@@ -130,6 +132,10 @@ export function DrawerShell({
     onOpenLibrary();
     closeDrawer();
   }, [closeDrawer, onOpenLibrary]);
+
+  const handleOpenProfile = useCallback(() => {
+    onOpenProfile();
+  }, [onOpenProfile]);
 
   const handleSelectConversation = useCallback(
     (conversationId: string) => {
@@ -211,6 +217,7 @@ export function DrawerShell({
             conversations={conversations}
             onNewChat={handleNewChat}
             onOpenLibrary={handleOpenLibrary}
+            onOpenProfile={handleOpenProfile}
             onSelectConversation={handleSelectConversation}
           />
         </Animated.View>

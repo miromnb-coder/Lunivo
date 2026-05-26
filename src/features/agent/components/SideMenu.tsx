@@ -2,6 +2,7 @@ import { CirclePlus, Search, SquarePen } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Rect } from 'react-native-svg';
 
 import { agentTheme } from '../constants/agentTheme';
 import type { ConversationSummary } from '../types/conversation';
@@ -11,7 +12,7 @@ const ICON_COLOR = agentTheme.colors.text;
 const SECTION_COLOR = agentTheme.colors.mutedText;
 const DRAWER_HEADER_TOP = 34;
 const DRAWER_HEADER_HEIGHT = 82;
-const DRAWER_CONTENT_GAP = 46;
+const DRAWER_CONTENT_GAP = 20;
 
 type MenuIconProps = {
   color?: string;
@@ -35,44 +36,40 @@ type SideMenuProps = {
   onSelectConversation: (conversationId: string) => void;
 };
 
-function LibraryBooksIcon({ color = ICON_COLOR, size = 31, strokeWidth = 2.05 }: MenuIconProps) {
-  const bookWidth = size * 0.23;
-  const bookHeight = size * 0.72;
-  const borderRadius = bookWidth * 0.46;
+function LibraryBooksIcon({ color = ICON_COLOR, size = 31, strokeWidth = 1.85 }: MenuIconProps) {
+  const lineWidth = Math.max(strokeWidth, 2.35);
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: size * 0.07 }}>
-        <View
-          style={{
-            width: bookWidth,
-            height: bookHeight,
-            borderRadius,
-            borderWidth: strokeWidth,
-            borderColor: color,
-          }}
-        />
-        <View
-          style={{
-            width: bookWidth,
-            height: bookHeight,
-            borderRadius,
-            borderWidth: strokeWidth,
-            borderColor: color,
-          }}
-        />
-        <View
-          style={{
-            width: bookWidth,
-            height: bookHeight,
-            borderRadius,
-            borderWidth: strokeWidth,
-            borderColor: color,
-            transform: [{ rotate: '-7deg' }],
-          }}
-        />
-      </View>
-    </View>
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Rect
+        x="5.5"
+        y="7"
+        width="6.3"
+        height="18"
+        rx="2.25"
+        stroke={color}
+        strokeWidth={lineWidth}
+      />
+      <Rect
+        x="13.25"
+        y="7"
+        width="6.3"
+        height="18"
+        rx="2.25"
+        stroke={color}
+        strokeWidth={lineWidth}
+      />
+      <Rect
+        x="20.75"
+        y="7.35"
+        width="6.3"
+        height="18"
+        rx="2.25"
+        stroke={color}
+        strokeWidth={lineWidth}
+        transform="rotate(-6 23.9 16.35)"
+      />
+    </Svg>
   );
 }
 

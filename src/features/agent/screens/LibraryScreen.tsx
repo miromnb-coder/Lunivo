@@ -93,17 +93,6 @@ export function LibraryScreen({ onMenuPress }: LibraryScreenProps) {
         <PlaceholderCard width={placeholderWidth} />
         <PlaceholderCard width={placeholderWidth} />
       </View>
-
-      <View style={styles.emptyState}>
-        <Text allowFontScaling={false} style={styles.emptyTitle}>
-          Create and organize{`\n`}your study content
-        </Text>
-        <Pressable accessibilityRole="button" style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}>
-          <Text allowFontScaling={false} style={styles.createButtonText}>
-            Create
-          </Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -249,41 +238,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 28,
     opacity: 0.98,
-  },
-  emptyState: {
-    alignItems: 'center',
-    marginTop: 132,
-  },
-  emptyTitle: {
-    color: agentTheme.colors.text,
-    fontFamily: serifFont,
-    fontSize: 24.5,
-    lineHeight: 33,
-    fontWeight: '400',
-    letterSpacing: -0.35,
-    textAlign: 'center',
-  },
-  createButton: {
-    minWidth: 132,
-    height: 49,
-    marginTop: 26,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: ACTIVE_COLOR,
-    shadowColor: '#171923',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontFamily: serifFont,
-    fontSize: 18.5,
-    lineHeight: 23,
-    fontWeight: '400',
-    letterSpacing: -0.18,
   },
   pressed: {
     opacity: 0.62,

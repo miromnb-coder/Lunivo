@@ -1,12 +1,42 @@
 import { ChevronRight, Edit3, Flag, GraduationCap, Globe2, SlidersHorizontal, Sparkles, Star, Target } from 'lucide-react-native';
 import type { ComponentType, ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  PanResponder,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
 import { agentTheme } from '../constants/agentTheme';
 
 const serifFont = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 const AVATAR_COLOR = '#b1a29b';
 const ICON_COLOR = agentTheme.colors.text;
+const SHEET_BACKGROUND = '#fffefc';
+
+const CLOSE_DISTANCE = 88;
+const CLOSE_VELOCITY = 0.85;
+const DRAG_ACTIVATION_DISTANCE = 7;
+const HIDDEN_SHEET_HEIGHT_RATIO = 0.86;
+const HIDDEN_SHEET_EXTRA_OFFSET = 90;
+
+const OPEN_SPRING_CONFIG = {
+  damping: 25,
+  stiffness: 230,
+  mass: 0.9,
+  overshootClamping: true,
+  restDisplacementThreshold: 0.5,
+  restSpeedThreshold: 0.5,
+  useNativeDriver: true,
+} as const;
 
 type IconComponent = ComponentType<{
   color?: string;
@@ -55,15 +85,113 @@ function Row({ Icon, label, value }: { Icon: IconComponent; label: string; value
 }
 
 export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: MeSheetProps) {
-  if (!visible) {
-    return null;
-  }
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const dragTranslateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      lunivoHaptics.openDrawer();
+      dragTranslateY.setValue(0);
+
+      Animated.spring(progress, {
+        toValue: 1,
+        ...OPEN_SPRING_CONFIG,
+      }).start();
+      return;
+    }
+
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 175,
+      easing: Easing.bezier(0.36, 0, 0.2, 1),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        dragTranslateY.setValue(0);
+      }
+    });
+  }, [dragTranslateY, progress, visible]);
+
+  const closeSheet = useCallback(() => {
+    lunivoHaptics.closeDrawer();
+    onClose();
+  }, [onClose]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponderCapture: (_, gesture) => {
+          const isPullingDown = gesture.dy > DRAG_ACTIVATION_DISTANCE;
+          const isMostlyVertical = Math.abs(gesture.dy) > Math.abs(gesture.dx) * 1.2;
+
+          return visible && isPullingDown && isMostlyVertical;
+        },
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          const isPullingDown = gesture.dy > DRAG_ACTIVATION_DISTANCE;
+          const isMostlyVertical = Math.abs(gesture.dy) > Math.abs(gesture.dx) * 1.2;
+
+          return visible && isPullingDown && isMostlyVertical;
+        },
+        onPanResponderMove: (_, gesture) => {
+          dragTranslateY.setValue(Math.max(0, gesture.dy));
+        },
+        onPanResponderRelease: (_, gesture) => {
+          const shouldClose = gesture.dy > CLOSE_DISTANCE || gesture.vy > CLOSE_VELOCITY;
+
+          if (shouldClose) {
+            closeSheet();
+            return;
+          }
+
+          Animated.spring(dragTranslateY, {
+            toValue: 0,
+            tension: 95,
+            friction: 13,
+            useNativeDriver: true,
+          }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dragTranslateY, {
+            toValue: 0,
+            tension: 95,
+            friction: 13,
+            useNativeDriver: true,
+          }).start();
+        },
+      }),
+    [closeSheet, dragTranslateY, visible],
+  );
+
+  const overlayOpacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.48],
+  });
+  const hiddenTranslateY = height * HIDDEN_SHEET_HEIGHT_RATIO + HIDDEN_SHEET_EXTRA_OFFSET;
+  const baseTranslateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [hiddenTranslateY, 0],
+  });
+  const sheetTranslateY = Animated.add(baseTranslateY, dragTranslateY);
 
   return (
-    <View style={styles.overlay}>
-      <Pressable accessibilityLabel="Close profile" accessibilityRole="button" onPress={onClose} style={styles.backdrop} />
+    <View pointerEvents={visible ? 'auto' : 'none'} style={styles.root}>
+      <Animated.View style={[styles.backdrop, { opacity: overlayOpacity }]}>
+        <Pressable accessibilityLabel="Close profile" accessibilityRole="button" onPress={closeSheet} style={StyleSheet.absoluteFill} />
+      </Animated.View>
 
-      <View style={styles.sheet}>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.sheet,
+          {
+            paddingBottom: Math.max(insets.bottom + 8, 24),
+            transform: [{ translateY: sheetTranslateY }],
+          },
+        ]}
+      >
         <View style={styles.dragHandle} />
 
         <View style={styles.headerArea}>
@@ -109,29 +237,31 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
           <Divider />
           <Row Icon={GraduationCap} label="Study settings" />
         </Card>
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  root: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 90,
-    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(17,24,39,0.48)',
+    backgroundColor: '#111111',
   },
   sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     height: '86%',
     paddingTop: 14,
     paddingHorizontal: 30,
-    paddingBottom: 24,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
-    backgroundColor: '#fffefc',
+    backgroundColor: SHEET_BACKGROUND,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.1,

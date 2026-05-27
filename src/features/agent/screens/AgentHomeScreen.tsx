@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { lunivoHaptics } from '../../../shared/haptics/lunivoHaptics';
+import { LunivoPlusScreen } from '../../billing/screens/LunivoPlusScreen';
 import { AgentHeader } from '../components/AgentHeader';
 import { ChatComposer } from '../components/ChatComposer';
 import { ChatMessageList } from '../components/ChatMessageList';
@@ -42,6 +43,7 @@ export function AgentHomeScreen() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [plusSheetVisible, setPlusSheetVisible] = useState(false);
   const [meSheetVisible, setMeSheetVisible] = useState(false);
+  const [lunivoPlusVisible, setLunivoPlusVisible] = useState(false);
   const composerBottom = useRef(new Animated.Value(CLOSED_COMPOSER_BOTTOM)).current;
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const heroTranslateY = useRef(new Animated.Value(0)).current;
@@ -72,6 +74,7 @@ export function AgentHomeScreen() {
     Keyboard.dismiss();
     setPlusSheetVisible(false);
     setMeSheetVisible(false);
+    setLunivoPlusVisible(false);
   }, []);
 
   const hidePlusSheet = useCallback(() => {
@@ -122,12 +125,25 @@ export function AgentHomeScreen() {
   const openMeSheet = useCallback(() => {
     Keyboard.dismiss();
     setPlusSheetVisible(false);
+    setLunivoPlusVisible(false);
     closeComposerPosition(180);
     setMeSheetVisible(true);
   }, [closeComposerPosition]);
 
   const closeMeSheet = useCallback(() => {
     setMeSheetVisible(false);
+  }, []);
+
+  const openLunivoPlusScreen = useCallback(() => {
+    Keyboard.dismiss();
+    setPlusSheetVisible(false);
+    setMeSheetVisible(false);
+    closeComposerPosition(180);
+    setLunivoPlusVisible(true);
+  }, [closeComposerPosition]);
+
+  const closeLunivoPlusScreen = useCallback(() => {
+    setLunivoPlusVisible(false);
   }, []);
 
   const handleNewChat = useCallback(() => {
@@ -183,6 +199,7 @@ export function AgentHomeScreen() {
     const showSub = Keyboard.addListener(showEvent, (event) => {
       setPlusSheetVisible(false);
       setMeSheetVisible(false);
+      setLunivoPlusVisible(false);
       const nextKeyboardHeight = event.endCoordinates.height;
       setKeyboardOpen(true);
       setKeyboardHeight(nextKeyboardHeight);
@@ -225,14 +242,18 @@ export function AgentHomeScreen() {
     <DrawerShell
       avatarInitials={avatarInitials}
       conversations={conversations}
-      gesturesEnabled={!plusSheetVisible && !meSheetVisible}
+      gesturesEnabled={!plusSheetVisible && !meSheetVisible && !lunivoPlusVisible}
       overlay={
-        <MeSheet
-          displayName={displayName}
-          initials={avatarInitials}
-          visible={meSheetVisible}
-          onClose={closeMeSheet}
-        />
+        <>
+          <MeSheet
+            displayName={displayName}
+            initials={avatarInitials}
+            visible={meSheetVisible}
+            onClose={closeMeSheet}
+            onOpenUpgrade={openLunivoPlusScreen}
+          />
+          <LunivoPlusScreen visible={lunivoPlusVisible} onClose={closeLunivoPlusScreen} />
+        </>
       }
       onNewChat={handleNewChat}
       onOpenLibrary={openLibraryView}

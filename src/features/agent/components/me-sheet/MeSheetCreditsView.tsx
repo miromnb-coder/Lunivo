@@ -28,16 +28,16 @@ function CreditMetricRow({
   return (
     <View style={styles.creditMetricRow}>
       <View style={styles.creditMetricIconSlot}>
-        <Icon color={ICON_COLOR} size={27} strokeWidth={1.85} />
+        <Icon color={ICON_COLOR} size={25} strokeWidth={1.85} />
       </View>
       <View style={styles.creditMetricTextBlock}>
         <View style={styles.creditMetricLabelRow}>
-          <Text allowFontScaling={false} style={styles.creditMetricLabel}>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9} style={styles.creditMetricLabel}>
             {label}
           </Text>
-          {withInfo ? <Info color="rgba(31,36,48,0.46)" size={18} strokeWidth={1.9} /> : null}
+          {withInfo ? <Info color="rgba(31,36,48,0.46)" size={17} strokeWidth={1.9} /> : null}
         </View>
-        <Text allowFontScaling={false} style={styles.creditMetricSubtitle}>
+        <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9} style={styles.creditMetricSubtitle}>
           {subtitle}
         </Text>
       </View>

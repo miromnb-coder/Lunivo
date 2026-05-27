@@ -121,7 +121,7 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, onOpenUpgrade
 
   const overlayOpacity = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.48],
+    outputRange: [0, 0.42],
   });
   const hiddenTranslateY = height * HIDDEN_SHEET_HEIGHT_RATIO + HIDDEN_SHEET_EXTRA_OFFSET;
   const baseTranslateY = progress.interpolate({

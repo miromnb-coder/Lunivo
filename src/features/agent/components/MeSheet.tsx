@@ -11,6 +11,7 @@ import {
   Sparkles,
   Star,
   Target,
+  X,
 } from 'lucide-react-native';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -58,9 +59,9 @@ const OPEN_SPRING_CONFIG = {
 } as const;
 
 const CREDIT_HISTORY = [
-  { date: '19 May 2026', title: 'What model do you use', value: '-22' },
+  { date: '19 May 2026', title: 'What AI model do you use', value: '-22' },
   { date: '13 May 2026', title: 'Personal StudyPilot assistant', value: '-9' },
-  { date: '11 May 2026', title: 'Optimize personal assistant', value: '-64' },
+  { date: '11 May 2026', title: 'Optimize a personal AI agent', value: '-64' },
   { date: '2 May 2026', title: 'Plan my day', value: '-20' },
 ];
 
@@ -134,14 +135,14 @@ function CreditMetricRow({
   return (
     <View style={styles.creditMetricRow}>
       <View style={styles.creditMetricIconSlot}>
-        <Icon color={ICON_COLOR} size={25} strokeWidth={1.85} />
+        <Icon color={ICON_COLOR} size={27} strokeWidth={1.85} />
       </View>
       <View style={styles.creditMetricTextBlock}>
         <View style={styles.creditMetricLabelRow}>
           <Text allowFontScaling={false} style={styles.creditMetricLabel}>
             {label}
           </Text>
-          {withInfo ? <Info color="rgba(31,36,48,0.46)" size={17} strokeWidth={1.9} /> : null}
+          {withInfo ? <Info color="rgba(31,36,48,0.46)" size={18} strokeWidth={1.9} /> : null}
         </View>
         <Text allowFontScaling={false} style={styles.creditMetricSubtitle}>
           {subtitle}
@@ -212,18 +213,18 @@ function ProfileContent({
   );
 }
 
-function CreditsContent({ onBack, onOpenUpgrade }: { onBack: () => void; onOpenUpgrade: () => void }) {
+function CreditsContent({ onClose, onOpenUpgrade }: { onClose: () => void; onOpenUpgrade: () => void }) {
   return (
     <View style={styles.creditsContent}>
       <View style={styles.creditsHeader}>
         <Pressable
-          accessibilityLabel="Back to profile"
+          accessibilityLabel="Close credits"
           accessibilityRole="button"
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-          onPress={onBack}
-          style={({ pressed }) => [styles.creditsBackButton, pressed && styles.pressed]}
+          onPress={onClose}
+          style={({ pressed }) => [styles.creditsCloseButton, pressed && styles.pressed]}
         >
-          <ArrowLeft color={agentTheme.colors.text} size={28} strokeWidth={1.9} />
+          <X color={agentTheme.colors.text} size={28} strokeWidth={1.9} />
         </Pressable>
         <Text allowFontScaling={false} style={styles.creditsTitle}>
           Credits
@@ -321,11 +322,6 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, onOpenUpgrade
     setActiveView('credits');
   }, []);
 
-  const backToProfile = useCallback(() => {
-    lunivoHaptics.selection();
-    setActiveView('profile');
-  }, []);
-
   const openUpgrade = useCallback(() => {
     lunivoHaptics.selection();
     onOpenUpgrade();
@@ -407,7 +403,7 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, onOpenUpgrade
       >
         <View style={styles.dragHandle} />
         {activeView === 'credits' ? (
-          <CreditsContent onBack={backToProfile} onOpenUpgrade={openUpgrade} />
+          <CreditsContent onClose={closeSheet} onOpenUpgrade={openUpgrade} />
         ) : (
           <ProfileContent displayName={displayName} initials={initials} onOpenCredits={openCredits} />
         )}
@@ -557,7 +553,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  creditsBackButton: {
+  creditsCloseButton: {
     position: 'absolute',
     left: 0,
     width: 44,
@@ -578,16 +574,16 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   creditsCard: {
-    paddingHorizontal: 18,
-    paddingTop: 21,
-    paddingBottom: 16,
-    borderRadius: 20,
+    paddingHorizontal: 30,
+    paddingTop: 27,
+    paddingBottom: 22,
+    borderRadius: 24,
     backgroundColor: CARD_BACKGROUND,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
   },
   creditsPlanHeader: {
-    minHeight: 50,
+    minHeight: 58,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -595,14 +591,14 @@ const styles = StyleSheet.create({
   creditsPlanTitle: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 29,
-    lineHeight: 35,
+    fontSize: 34,
+    lineHeight: 41,
     fontWeight: '700',
-    letterSpacing: -0.42,
+    letterSpacing: -0.52,
   },
   upgradeButton: {
-    minWidth: 104,
-    height: 42,
+    minWidth: 132,
+    height: 51,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -610,25 +606,25 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     color: '#fff',
-    fontSize: 16.5,
-    lineHeight: 21,
+    fontSize: 19.5,
+    lineHeight: 24,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
   },
   creditsWideDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(31,36,48,0.1)',
   },
   creditMetricRow: {
-    minHeight: 83,
+    minHeight: 98,
     flexDirection: 'row',
     alignItems: 'center',
   },
   creditMetricIconSlot: {
-    width: 38,
+    width: 44,
     alignItems: 'flex-start',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 22,
   },
   creditMetricTextBlock: {
     flex: 1,
@@ -641,50 +637,50 @@ const styles = StyleSheet.create({
   creditMetricLabel: {
     color: agentTheme.colors.text,
     fontFamily: serifFont,
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: '600',
-    letterSpacing: -0.22,
+    fontSize: 25,
+    lineHeight: 30,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   creditMetricSubtitle: {
-    marginTop: 5,
+    marginTop: 4,
     color: agentTheme.colors.mutedText,
     fontFamily: serifFont,
-    fontSize: 15.5,
-    lineHeight: 20,
+    fontSize: 18.5,
+    lineHeight: 24,
     fontWeight: '400',
-    letterSpacing: -0.1,
+    letterSpacing: -0.12,
   },
   creditMetricValue: {
     color: agentTheme.colors.text,
-    minWidth: 56,
+    minWidth: 60,
     marginLeft: 12,
     textAlign: 'right',
     fontFamily: serifFont,
-    fontSize: 21,
-    lineHeight: 26,
-    fontWeight: '500',
-    letterSpacing: -0.22,
+    fontSize: 25,
+    lineHeight: 31,
+    fontWeight: '700',
+    letterSpacing: -0.26,
   },
   historyGroup: {
-    marginTop: 27,
+    marginTop: 31,
   },
   historyDate: {
     color: agentTheme.colors.mutedText,
     marginLeft: 4,
-    marginBottom: 12,
-    fontSize: 16,
+    marginBottom: 15,
+    fontSize: 17,
     lineHeight: 22,
-    fontWeight: '700',
-    letterSpacing: 1.9,
+    fontWeight: '800',
+    letterSpacing: 3.2,
   },
   historyItem: {
-    minHeight: 55,
+    minHeight: 59,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    paddingLeft: 17,
-    paddingRight: 18,
+    borderRadius: 17,
+    paddingLeft: 19,
+    paddingRight: 20,
     backgroundColor: CARD_BACKGROUND,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
@@ -694,15 +690,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
     fontFamily: serifFont,
-    fontSize: 17.5,
-    lineHeight: 22,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: '400',
     letterSpacing: -0.2,
   },
   historyValue: {
     color: 'rgba(31,36,48,0.66)',
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: '500',
     letterSpacing: -0.18,
   },

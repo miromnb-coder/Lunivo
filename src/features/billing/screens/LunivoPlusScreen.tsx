@@ -20,7 +20,6 @@ const ACCENT = '#000000';
 const BACKGROUND = agentTheme.colors.background;
 const CARD_BACKGROUND = 'rgba(255,255,255,0.58)';
 const BORDER_COLOR = 'rgba(0,0,0,0.07)';
-const MUTED = agentTheme.colors.mutedText;
 
 type LunivoPlusScreenProps = {
   onClose: () => void;
@@ -41,7 +40,7 @@ function CheckRow({ children }: { children: string }) {
   return (
     <View style={styles.checkRow}>
       <View style={styles.checkCircle}>
-        <Check color="#ffffff" size={10.5} strokeWidth={3} />
+        <Check color="#ffffff" size={9.5} strokeWidth={3} />
       </View>
       <Text allowFontScaling={false} numberOfLines={1} style={styles.checkText}>
         {children}
@@ -54,7 +53,7 @@ function BenefitRow({ Icon, title, subtitle }: { Icon: IconComponent; title: str
   return (
     <Pressable accessibilityRole="button" style={({ pressed }) => [styles.benefitRow, pressed && styles.pressed]}>
       <CircleIcon>
-        <Icon color={ACCENT} size={23} strokeWidth={1.65} />
+        <Icon color={ACCENT} size={22} strokeWidth={1.65} />
       </CircleIcon>
       <View style={styles.benefitTextBlock}>
         <Text allowFontScaling={false} numberOfLines={1} style={styles.benefitTitle}>
@@ -64,7 +63,7 @@ function BenefitRow({ Icon, title, subtitle }: { Icon: IconComponent; title: str
           {subtitle}
         </Text>
       </View>
-      <ChevronRight color="rgba(0,0,0,0.52)" size={21} strokeWidth={1.9} />
+      <ChevronRight color="rgba(0,0,0,0.52)" size={20} strokeWidth={1.9} />
     </Pressable>
   );
 }
@@ -76,11 +75,7 @@ export function LunivoPlusScreen({ onClose, visible }: LunivoPlusScreenProps) {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView
-        bounces={false}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView bounces={false} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Pressable
             accessibilityLabel="Close Lunivo Plus"
@@ -115,7 +110,7 @@ export function LunivoPlusScreen({ onClose, visible }: LunivoPlusScreenProps) {
             </Text>
             <View style={styles.planDivider} />
             <CircleIcon>
-              <Sparkles color={ACCENT} size={22} strokeWidth={1.55} />
+              <Sparkles color={ACCENT} size={21} strokeWidth={1.55} />
             </CircleIcon>
             <Text allowFontScaling={false} style={styles.freeCreditsNumber}>
               150
@@ -135,10 +130,10 @@ export function LunivoPlusScreen({ onClose, visible }: LunivoPlusScreenProps) {
                 Recommended
               </Text>
             </View>
-            <Text allowFontScaling={false} style={styles.planTitle}>
+            <Text allowFontScaling={false} style={[styles.planTitle, styles.plusPlanTitle]}>
               Plus
             </Text>
-            <Text allowFontScaling={false} style={styles.planSubtitle}>
+            <Text allowFontScaling={false} numberOfLines={1} style={[styles.planSubtitle, styles.plusPlanSubtitle]}>
               Unlock everything
             </Text>
             <View style={styles.plusDivider} />
@@ -149,7 +144,7 @@ export function LunivoPlusScreen({ onClose, visible }: LunivoPlusScreenProps) {
               daily credits
             </Text>
             <View style={styles.plusDivider} />
-            <Text allowFontScaling={false} style={styles.plusPrice}>
+            <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={styles.plusPrice}>
               €6.99 <Text style={styles.priceUnit}>/ month</Text>
             </Text>
             <View style={styles.checkList}>
@@ -161,7 +156,7 @@ export function LunivoPlusScreen({ onClose, visible }: LunivoPlusScreenProps) {
         </View>
 
         <Pressable accessibilityRole="button" style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}>
-          <Text allowFontScaling={false} style={styles.ctaText}>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.86} style={styles.ctaText}>
             Upgrade to Plus — €6.99/month
           </Text>
         </Pressable>
@@ -198,12 +193,12 @@ const styles = StyleSheet.create({
     backgroundColor: BACKGROUND,
   },
   scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 10,
+    paddingHorizontal: 27,
+    paddingTop: 8,
     paddingBottom: 18,
   },
   header: {
-    height: 55,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -218,57 +213,57 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: ACCENT,
     fontFamily: serifFont,
-    fontSize: 25,
-    lineHeight: 31,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '700',
     letterSpacing: -0.32,
   },
   hero: {
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 31,
+    paddingTop: 18,
+    paddingBottom: 29,
   },
   heroTitle: {
     color: ACCENT,
     fontFamily: serifFont,
-    fontSize: 43,
-    lineHeight: 50,
+    fontSize: 39,
+    lineHeight: 46,
     fontWeight: '700',
-    letterSpacing: -0.9,
+    letterSpacing: -0.86,
     textAlign: 'center',
   },
   heroSubtitle: {
-    marginTop: 18,
+    marginTop: 16,
     color: 'rgba(0,0,0,0.58)',
-    fontSize: 18,
-    lineHeight: 25,
+    fontSize: 16.5,
+    lineHeight: 23,
     fontWeight: '500',
     letterSpacing: -0.18,
     textAlign: 'center',
   },
   planRow: {
     flexDirection: 'row',
-    gap: 18,
+    gap: 13,
   },
   freeCard: {
     flex: 1,
-    minHeight: 335,
+    minHeight: 298,
     alignItems: 'center',
     borderRadius: 22,
-    paddingTop: 30,
-    paddingHorizontal: 22,
-    paddingBottom: 24,
+    paddingTop: 27,
+    paddingHorizontal: 18,
+    paddingBottom: 21,
     backgroundColor: CARD_BACKGROUND,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
   },
   plusCard: {
     flex: 1,
-    minHeight: 335,
+    minHeight: 298,
     borderRadius: 22,
-    paddingTop: 30,
-    paddingHorizontal: 26,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingHorizontal: 17,
+    paddingBottom: 18,
     backgroundColor: CARD_BACKGROUND,
     borderWidth: 1.7,
     borderColor: ACCENT,
@@ -276,149 +271,155 @@ const styles = StyleSheet.create({
   recommendedPill: {
     position: 'absolute',
     top: 14,
-    right: 14,
-    minWidth: 112,
-    height: 29,
+    right: 12,
+    minWidth: 94,
+    height: 27,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
     backgroundColor: ACCENT,
   },
   recommendedText: {
     color: '#ffffff',
-    fontSize: 11.7,
-    lineHeight: 15,
+    fontSize: 10.8,
+    lineHeight: 14,
     fontWeight: '700',
     letterSpacing: -0.05,
   },
   planTitle: {
     color: ACCENT,
     fontFamily: serifFont,
-    fontSize: 29,
-    lineHeight: 35,
+    fontSize: 27,
+    lineHeight: 32,
     fontWeight: '700',
     letterSpacing: -0.35,
     alignSelf: 'center',
   },
+  plusPlanTitle: {
+    alignSelf: 'flex-start',
+  },
   planSubtitle: {
     marginTop: 5,
     color: 'rgba(0,0,0,0.56)',
-    fontSize: 14.5,
-    lineHeight: 18,
+    fontSize: 13.5,
+    lineHeight: 17,
     fontWeight: '500',
     letterSpacing: -0.1,
     alignSelf: 'center',
   },
+  plusPlanSubtitle: {
+    alignSelf: 'flex-start',
+  },
   planDivider: {
     width: '100%',
     height: StyleSheet.hairlineWidth,
-    marginTop: 22,
-    marginBottom: 27,
+    marginTop: 21,
+    marginBottom: 25,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   plusDivider: {
     width: '100%',
     height: StyleSheet.hairlineWidth,
-    marginTop: 22,
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 13,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   circleIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(31,36,48,0.045)',
   },
   freeCreditsNumber: {
-    marginTop: 20,
+    marginTop: 18,
     color: ACCENT,
-    fontSize: 45,
-    lineHeight: 51,
+    fontSize: 42,
+    lineHeight: 47,
     fontWeight: '700',
-    letterSpacing: -1.2,
+    letterSpacing: -1.1,
   },
   plusCreditsNumber: {
     color: ACCENT,
-    fontSize: 49,
-    lineHeight: 55,
+    fontSize: 43,
+    lineHeight: 48,
     fontWeight: '700',
-    letterSpacing: -1.3,
+    letterSpacing: -1.2,
     textAlign: 'center',
   },
   creditsLabel: {
     marginTop: -1,
     color: 'rgba(0,0,0,0.58)',
-    fontSize: 15.5,
-    lineHeight: 20,
+    fontSize: 14.5,
+    lineHeight: 19,
     fontWeight: '500',
     letterSpacing: -0.12,
     textAlign: 'center',
   },
   freePrice: {
     color: 'rgba(0,0,0,0.56)',
-    fontSize: 21,
-    lineHeight: 27,
+    fontSize: 20,
+    lineHeight: 26,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
   plusPrice: {
     color: ACCENT,
-    fontSize: 31,
-    lineHeight: 37,
+    fontSize: 25,
+    lineHeight: 31,
     fontWeight: '800',
-    letterSpacing: -0.9,
+    letterSpacing: -0.75,
   },
   priceUnit: {
     color: 'rgba(0,0,0,0.56)',
-    fontSize: 17,
+    fontSize: 13.5,
     fontWeight: '500',
     letterSpacing: -0.2,
   },
   checkList: {
     marginTop: 8,
-    gap: 8,
+    gap: 7,
   },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: ACCENT,
   },
   checkText: {
     color: ACCENT,
     flex: 1,
-    fontSize: 12.5,
-    lineHeight: 17,
+    fontSize: 11.7,
+    lineHeight: 16,
     fontWeight: '600',
     letterSpacing: -0.12,
   },
   ctaButton: {
-    height: 66,
+    height: 61,
     marginTop: 25,
-    borderRadius: 24,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: ACCENT,
   },
   ctaText: {
     color: '#ffffff',
-    fontSize: 22,
-    lineHeight: 27,
+    fontSize: 19.5,
+    lineHeight: 25,
     fontWeight: '600',
     letterSpacing: -0.35,
   },
   restoreButton: {
-    minHeight: 45,
+    minHeight: 43,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -426,19 +427,19 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     color: 'rgba(0,0,0,0.5)',
-    fontSize: 15.5,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 19,
     fontWeight: '500',
   },
   benefitList: {
     gap: 8,
   },
   benefitRow: {
-    minHeight: 75,
+    minHeight: 70,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 14,
-    paddingLeft: 17,
+    paddingLeft: 16,
     paddingRight: 16,
     backgroundColor: CARD_BACKGROUND,
     borderWidth: 1,
@@ -446,26 +447,26 @@ const styles = StyleSheet.create({
   },
   benefitTextBlock: {
     flex: 1,
-    marginLeft: 18,
+    marginLeft: 17,
     marginRight: 10,
   },
   benefitTitle: {
     color: ACCENT,
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 16.5,
+    lineHeight: 21,
     fontWeight: '700',
-    letterSpacing: -0.22,
+    letterSpacing: -0.2,
   },
   benefitSubtitle: {
     marginTop: 2,
     color: 'rgba(0,0,0,0.54)',
-    fontSize: 13.5,
-    lineHeight: 18,
+    fontSize: 12.6,
+    lineHeight: 17,
     fontWeight: '400',
     letterSpacing: -0.08,
   },
   footer: {
-    minHeight: 34,
+    minHeight: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -473,8 +474,8 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: 'rgba(0,0,0,0.47)',
-    fontSize: 13.5,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '500',
     letterSpacing: -0.05,
   },

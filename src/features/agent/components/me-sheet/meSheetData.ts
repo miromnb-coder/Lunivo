@@ -11,7 +11,7 @@ export const BORDER_COLOR = 'rgba(31,36,48,0.055)';
 export const DIVIDER_COLOR = 'rgba(31,36,48,0.065)';
 
 export const CURRENT_CREDITS = 263;
-export const DAILY_REFRESH_CREDITS = 150;
+export const DAILY_REFRESH_CREDITS = 300;
 
 export const CLOSE_DISTANCE = 88;
 export const CLOSE_VELOCITY = 0.85;

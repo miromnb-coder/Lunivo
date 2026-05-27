@@ -74,6 +74,7 @@ type MeSheetProps = {
   displayName?: string;
   initials: string;
   onClose: () => void;
+  onOpenUpgrade: () => void;
   visible: boolean;
 };
 
@@ -211,7 +212,7 @@ function ProfileContent({
   );
 }
 
-function CreditsContent({ onBack }: { onBack: () => void }) {
+function CreditsContent({ onBack, onOpenUpgrade }: { onBack: () => void; onOpenUpgrade: () => void }) {
   return (
     <View style={styles.creditsContent}>
       <View style={styles.creditsHeader}>
@@ -235,7 +236,11 @@ function CreditsContent({ onBack }: { onBack: () => void }) {
             <Text allowFontScaling={false} style={styles.creditsPlanTitle}>
               Free
             </Text>
-            <Pressable accessibilityRole="button" style={({ pressed }) => [styles.upgradeButton, pressed && styles.pressed]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onOpenUpgrade}
+              style={({ pressed }) => [styles.upgradeButton, pressed && styles.pressed]}
+            >
               <Text allowFontScaling={false} style={styles.upgradeButtonText}>
                 Upgrade
               </Text>
@@ -273,7 +278,7 @@ function CreditsContent({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: MeSheetProps) {
+export function MeSheet({ displayName = 'Miro', initials, onClose, onOpenUpgrade, visible }: MeSheetProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
@@ -320,6 +325,11 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
     lunivoHaptics.selection();
     setActiveView('profile');
   }, []);
+
+  const openUpgrade = useCallback(() => {
+    lunivoHaptics.selection();
+    onOpenUpgrade();
+  }, [onOpenUpgrade]);
 
   const panResponder = useMemo(
     () =>
@@ -397,7 +407,7 @@ export function MeSheet({ displayName = 'Miro', initials, onClose, visible }: Me
       >
         <View style={styles.dragHandle} />
         {activeView === 'credits' ? (
-          <CreditsContent onBack={backToProfile} />
+          <CreditsContent onBack={backToProfile} onOpenUpgrade={openUpgrade} />
         ) : (
           <ProfileContent displayName={displayName} initials={initials} onOpenCredits={openCredits} />
         )}
